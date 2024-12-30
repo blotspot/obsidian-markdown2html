@@ -1,0 +1,11 @@
+{
+	"id": "markdown2html",
+	"name": "Copy Markdown to HTML",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "saves markdown as html in the clipboard",
+	"author": "blotspot",
+	"authorUrl": "https://github.com/blotspot",
+	"fundingUrl": "https://ko-fi.com/blotspot",
+	"isDesktopOnly": false
+}
