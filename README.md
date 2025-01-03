@@ -1,17 +1,25 @@
-# Copy Markdown to HTML
+# Obsidian Markdown to HTML Plugin
 
-A simple [Obsidian](https://obsidian.md) plugin to copy notes as html to the clipboard.
+A simple [Obsidian](https://obsidian.md) plugin to copy notes as HTML to the clipboard.
 
-Tested on Windows 11, Android 13, iOS 18.
+## Features
 
-## Use
+-   Converts Markdown content to HTML and saves it to the clipboard.
+-   Works with both selected text and entire documents.
+-   Available on all platforms.
 
-Open the command pallet (default is control+p `^p` or command+p `⌘p`) and search **"markdown2html"**.
+## Installation
 
-Select **Copy selection or document to clipboard** to save your current selection, or if nothing is selected, the full file to the clipboard.
+1. Download the latest release from the [releases page](https://github.com/blotspot/obsidian-markdown2html/releases).
+2. Unzip the downloaded file.
+3. Copy the folder to your Obsidian plugins directory (usually located at `.obsidian/plugins`).
+4. Enable the "Copy Markdown to HTML" plugin from the Settings > Community Plugins menu in Obsidian.
 
-## Install
+## Usage
 
--   visit the [releases](https://github.com/blotspot/obsidian-markdown2html/releases/) page, and grab two files from the latest version
--   copy `main.js`, and `manifest.json` to your vault's plugin folder under `markdown2html`
-    -   `~vault/.obsidian/plugins/markdown2html/`
+1. Open the command palette (default is `Ctrl+P` or `Cmd+P`) and search for **"markdown2html"**.
+2. Select **Copy selection or document to clipboard** to save your current selection, or if nothing is selected, the full file to the clipboard.
+
+## API Documentation
+
+-   Obsidian: https://github.com/obsidianmd/obsidian-api
