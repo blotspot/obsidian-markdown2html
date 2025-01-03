@@ -57,12 +57,25 @@ class Markdown2HtmlRenderer extends Component {
 	async cleanedHtml() {
 		const clonedRoot = this.root.cloneNode(true) as HTMLElement;
 
+		this.removeEmptyParagraphs(clonedRoot);
 		this.removeFrontMatter(clonedRoot);
 		this.removeDirAttribute(clonedRoot);
+
 		await this.convertImages(clonedRoot);
 
-		const html = clonedRoot.innerHTML;
+		// remove empty lines and return
+		const html = clonedRoot.innerHTML.replace(/^\s*/gm, "");
+
 		return html;
+	}
+
+	/** remove all child nodes that don't have any content (removes empy paragraphs from comments) */
+	private removeEmptyParagraphs(root: HTMLElement) {
+		root.querySelectorAll("p").forEach((node) => {
+			if (node.innerHTML.replace(/^\s*/gm, "").length == 0) {
+				node.remove();
+			}
+		});
 	}
 
 	/** Remove frontmatter header */
