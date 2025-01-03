@@ -3,7 +3,6 @@ import {
 	Component,
 	Editor,
 	MarkdownRenderer,
-	MarkdownView,
 	Notice,
 	Plugin,
 } from "obsidian";
@@ -25,7 +24,7 @@ export default class Markdown2Html extends Plugin {
 				};
 				await renderer.render(content());
 				navigator.clipboard
-					.writeText(renderer.cleanedHtml())
+					.writeText(await renderer.cleanedHtml())
 					.then(() => {
 						new Notice("HTML copied to the clipboard", 3500);
 					})
@@ -55,12 +54,12 @@ class Markdown2HtmlRenderer extends Component {
 		await MarkdownRenderer.render(this.app, md, this.root, "", this);
 	}
 
-	cleanedHtml() {
-		// @ts-ignore
-		const clonedRoot: HTMLElement = this.root.cloneNode(true);
+	async cleanedHtml() {
+		const clonedRoot = this.root.cloneNode(true) as HTMLElement;
 
 		this.removeFrontMatter(clonedRoot);
 		this.removeDirAttribute(clonedRoot);
+		await this.convertImages(clonedRoot);
 
 		const html = clonedRoot.innerHTML;
 		return html;
@@ -68,15 +67,41 @@ class Markdown2HtmlRenderer extends Component {
 
 	/** Remove frontmatter header */
 	private removeFrontMatter(root: HTMLElement) {
-		root.querySelectorAll(".frontmatter, .frontmatter-container").forEach(
-			(node) => node.remove()
+		const frontmatterNodes = root.querySelectorAll(
+			".frontmatter, .frontmatter-container"
 		);
+		frontmatterNodes.forEach((node) => node.remove());
 	}
 
 	/** Remove the dir attribute of elements */
 	private removeDirAttribute(root: HTMLElement) {
-		root.querySelectorAll("[dir]").forEach((node) =>
-			node.removeAttribute("dir")
-		);
+		const dirNodes = root.querySelectorAll("[dir]");
+		dirNodes.forEach((node) => node.removeAttribute("dir"));
+	}
+
+	/** Convert internal Images to base64 data URL */
+	private async convertImages(root: HTMLElement) {
+		const images = root.querySelectorAll(
+			'img:not([src^="http"])'
+		) as NodeListOf<HTMLImageElement>;
+		for (let i = 0; i < images.length; i++) {
+			const image = images[i];
+			image.src = await this.toBase64(image.src);
+		}
+	}
+
+	private async toBase64(src: string) {
+		return await fetch(src)
+			.then((res) => res.blob())
+			.then(
+				(blob) =>
+					new Promise<FileReader>((resolve, reject) => {
+						var fr = new FileReader();
+						fr.onload = () => resolve(fr);
+						fr.onerror = (err) => reject(err);
+						fr.readAsDataURL(blob);
+					})
+			)
+			.then((fr) => fr.result as string);
 	}
 }
