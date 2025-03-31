@@ -36,7 +36,7 @@ export default class Markdown2Html extends Plugin {
 		});
 	}
 
-	onunload() {}
+	onunload() { }
 }
 
 class Markdown2HtmlRenderer extends Component {
@@ -59,7 +59,7 @@ class Markdown2HtmlRenderer extends Component {
 
 		this.removeEmptyParagraphs(clonedRoot);
 		this.removeFrontMatter(clonedRoot);
-		this.removeDirAttribute(clonedRoot);
+		this.removeAttributes(clonedRoot);
 
 		await this.convertImages(clonedRoot);
 
@@ -69,7 +69,7 @@ class Markdown2HtmlRenderer extends Component {
 		return html;
 	}
 
-	/** remove all child nodes that don't have any content (removes empy paragraphs from comments) */
+	/** remove all child nodes that don't have any content (removes empty paragraphs from comments) */
 	private removeEmptyParagraphs(root: HTMLElement) {
 		root.querySelectorAll("p").forEach((node) => {
 			if (node.innerHTML.replace(/^\s*/gm, "").length == 0) {
@@ -86,10 +86,33 @@ class Markdown2HtmlRenderer extends Component {
 		frontmatterNodes.forEach((node) => node.remove());
 	}
 
-	/** Remove the dir attribute of elements */
-	private removeDirAttribute(root: HTMLElement) {
-		const dirNodes = root.querySelectorAll("[dir]");
-		dirNodes.forEach((node) => node.removeAttribute("dir"));
+	/** Remove all irrelevant attributes of elements */
+	private removeAttributes(root: HTMLElement) {
+		const elements = root.querySelectorAll<HTMLElement>("*");
+
+		// TODO: make configurable
+		const allowedAttributes = ["id", "href", "src", "width", "height", "alt", "colspan", "rowspan"];
+		const allowedClasses: string[] = []; // ["internal-link"];
+
+		elements.forEach((element) => {
+			const attributesToRemove: string[] = [];
+			const classesToKeep: string[] = [];
+			allowedClasses.forEach((cls) => {
+				if (element.classList.contains(cls)) {
+					classesToKeep.push(cls);
+				}
+			});
+
+			const attributes = element.attributes;
+			for (let i = 0; i < attributes.length; i++) {
+				const attrName = attributes[i].name;
+				if (!allowedAttributes.contains(attrName)) {
+					attributesToRemove.push(attrName);
+				}
+			}
+			attributesToRemove.forEach((attr) => element.removeAttribute(attr));
+			element.addClasses(classesToKeep);
+		});
 	}
 
 	/** Convert internal Images to base64 data URL */
