@@ -1,7 +1,9 @@
-export async function cleanHtml(root: HTMLElement) {
+import { Markdown2HtmlPluginSettings } from "./settings";
+
+export async function cleanHtml(root: HTMLElement, settings: Markdown2HtmlPluginSettings) {
 	removeEmptyContainer(root);
 	removeFrontMatter(root);
-	removeAttributes(root);
+	removeAttributes(root, settings);
 	await convertImages(root);
 
 	const html = removeEmptyLines(root.innerHTML);
@@ -29,21 +31,19 @@ function removeFrontMatter(element: HTMLElement) {
 }
 
 /** Remove all irrelevant attributes of elements */
-function removeAttributes(element: HTMLElement) {
+function removeAttributes(element: HTMLElement, settings: Markdown2HtmlPluginSettings) {
 	const elements = element.querySelectorAll<HTMLElement>("*");
-
-	// TODO: make configurable
-	const allowedAttributes = ["id", "href", "src", "width", "height", "alt", "colspan", "rowspan"];
-	const allowedClasses: string[] = ["internal-link"];
 
 	elements.forEach(element => {
 		const attributesToRemove: string[] = [];
-		const classesToKeep: string[] = Object.assign([], allowedClasses).filter(cls => element.classList.contains(cls));
+		const classesToKeep: string[] = Object.assign([], settings.classList).filter(cls =>
+			element.classList.contains(cls)
+		);
 
 		const attributes = element.attributes;
 		for (let i = 0; i < attributes.length; i++) {
 			const attrName = attributes[i].name.toLowerCase();
-			if (!allowedAttributes.contains(attrName)) {
+			if (!settings.attributeList.contains(attrName)) {
 				attributesToRemove.push(attrName);
 			}
 		}
