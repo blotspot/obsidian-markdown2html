@@ -1,6 +1,7 @@
-import { Markdown2HtmlPluginSettings } from "./settings";
+import { Markdown2HtmlSettings } from "./settings";
+import { isEmpty, removeEmptyLines } from "./utils";
 
-export async function cleanHtml(root: HTMLElement, settings: Markdown2HtmlPluginSettings) {
+export async function cleanHtml(root: HTMLElement, settings: Markdown2HtmlSettings) {
 	removeEmptyContainer(root);
 	removeFrontMatter(root);
 	removeAttributes(root, settings);
@@ -10,15 +11,10 @@ export async function cleanHtml(root: HTMLElement, settings: Markdown2HtmlPlugin
 	return html;
 }
 
-function removeEmptyLines(text: string) {
-	return text.replace(/^\s*/gm, "");
-}
-
 /** remove all child nodes that don't have any content (removes empty paragraphs left by comments) */
 function removeEmptyContainer(element: HTMLElement) {
 	element.querySelectorAll("p, div").forEach(node => {
-		const nodeContents = removeEmptyLines(node.innerHTML);
-		if (nodeContents.length == 0) {
+		if (isEmpty(node.innerHTML)) {
 			node.remove();
 		}
 	});
@@ -31,7 +27,7 @@ function removeFrontMatter(element: HTMLElement) {
 }
 
 /** Remove all irrelevant attributes of elements */
-function removeAttributes(element: HTMLElement, settings: Markdown2HtmlPluginSettings) {
+function removeAttributes(element: HTMLElement, settings: Markdown2HtmlSettings) {
 	const elements = element.querySelectorAll<HTMLElement>("*");
 
 	elements.forEach(element => {

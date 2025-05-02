@@ -1,20 +1,20 @@
-import test from "node:test";
 import { App, debounce, ExtraButtonComponent, PluginSettingTab, Setting, TextComponent } from "obsidian";
 import Markdown2Html from "src/plugin";
+import { isEmpty } from "./utils";
 
-export interface Markdown2HtmlPluginSettings {
+export interface Markdown2HtmlSettings {
 	attributeList: string[];
 	classList: string[];
 }
 
-export const DEFAULT_SETTINGS: Markdown2HtmlPluginSettings = {
+export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
 	attributeList: ["id", "href", "src", "width", "height", "alt", "colspan", "rowspan"],
 	classList: [],
 };
 
 export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 	private plugin: Markdown2Html;
-	private data: Markdown2HtmlPluginSettings;
+	private data: Markdown2HtmlSettings;
 
 	constructor(app: App, plugin: Markdown2Html) {
 		super(app, plugin);
@@ -22,7 +22,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 		this.loadSettings();
 	}
 
-	get settings(): Markdown2HtmlPluginSettings {
+	get settings(): Markdown2HtmlSettings {
 		return this.data;
 	}
 
@@ -30,44 +30,38 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
+		new Setting(containerEl).setHeading().setName("Attributes");
 		this.newListSetting(
 			containerEl,
 			"Attributes to keep",
 			"Add attribute name(s) you want to keep when rendering markdown to HTML.",
 			"Add attribute to keep",
-			this.data.attributeList,
-			(value: string) => {
-				if (!this.data.attributeList.includes(value)) {
-					this.data.attributeList.push(value);
-				}
-				this.save();
-			},
-			(value: string) => {
-				if (this.data.attributeList.includes(value)) {
-					this.data.attributeList.remove(value);
-				}
-				this.save();
-			}
+			settings => settings.attributeList
 		);
 
+		new Setting(containerEl)
+			.setName("Reset Attributes")
+			.setDesc(
+				`It is recommended to keep the default attributes. In case you accidentaly deleted some or all of them, you can reset them to the default values (${DEFAULT_SETTINGS.attributeList.join(", ")}).`
+			)
+			.addButton(button =>
+				button
+					.setIcon("list-restart")
+					.setTooltip("Reset Attributes to default")
+					.onClick(() => {
+						this.data.attributeList = Array.from(DEFAULT_SETTINGS.attributeList);
+						this.save();
+						this.display();
+					})
+			);
+
+		new Setting(containerEl).setHeading().setName("Classes");
 		this.newListSetting(
 			containerEl,
 			"Classes to keep",
 			"Add class name(s) you want to keep when rendering markdown to HTML.",
 			"Add class to keep",
-			this.data.classList,
-			(value: string) => {
-				if (!this.data.classList.includes(value)) {
-					this.data.classList.push(value);
-				}
-				this.save();
-			},
-			(value: string) => {
-				if (this.data.classList.includes(value)) {
-					this.data.classList.remove(value);
-				}
-				this.save();
-			}
+			settings => settings.classList
 		);
 	}
 
@@ -76,24 +70,28 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 		name: string,
 		desc: string,
 		buttonTooltip: string,
-		initList: string[] = [],
-		addToSettingCallback?: (value: string) => void,
-		removeFromSettingCallback?: (value: string) => void
+		listContent: (settings: Markdown2HtmlSettings) => string[]
 	) {
 		const listDiv = createDiv({ cls: "setting-command-hotkeys" });
 		let input: TextComponent;
 		const setting = new Setting(containerEl).setName(name).setDesc(desc);
 
-		const onInputSet = async () => {
+		const addElement = async () => {
 			input
 				.getValue()
-				.split(",")
-				.map(v => v.trim())
+				.split(/[, ]/g)
 				.forEach(value => {
-					if (value.replace(/^\s*/gm, "").length > 0) {
-						addToSettingCallback?.(value);
-						this.addListElement(listDiv, value, removeFromSettingCallback);
+					// replace invalid characters
+					value = value.replace(/[ ~!@$%^&*()+=,./';:"?><\[\]\\\{\}|`#]/g, "");
+
+					// add to list if not already in list
+					if (!isEmpty(value) && !listContent(this.data).contains(value)) {
+						listContent(this.data).push(value);
+						this.addListElement(listDiv, value, listContent);
+						this.save();
 						input.setValue("");
+					} else {
+						input.inputEl.focus();
 					}
 				});
 		};
@@ -105,30 +103,34 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 				input.inputEl.addEventListener("keypress", (e: KeyboardEvent) => {
 					if (e.key === "Enter") {
 						e.preventDefault();
-						onInputSet();
+						addElement();
 					}
 				});
 			})
-			.addButton(button => button.setIcon("plus-circle").setTooltip(buttonTooltip).onClick(onInputSet));
+			.addButton(button => button.setIcon("plus-circle").setTooltip(buttonTooltip).onClick(addElement));
 
-		initList.forEach(value => {
-			this.addListElement(listDiv, value, removeFromSettingCallback);
+		listContent(this.data).forEach(value => {
+			this.addListElement(listDiv, value, listContent);
 		});
 	}
 
 	private addListElement(
 		containerEl: HTMLElement,
 		elementName: string,
-		removeFromListCallback?: (value: string) => void
+		listContent: (settings: Markdown2HtmlSettings) => string[]
 	) {
-		const element = createSpan({ cls: "setting-hotkey", parent: containerEl });
-		element.setText(elementName);
-		const delBtn = new ExtraButtonComponent(element);
+		const elementSpan = createSpan({ cls: "setting-hotkey", parent: containerEl });
+		elementSpan.setText(elementName);
+
+		const delBtn = new ExtraButtonComponent(elementSpan);
 		delBtn.setIcon("cross");
 		delBtn.setTooltip(`Delete '${elementName}' from list`);
 		delBtn.onClick(() => {
-			removeFromListCallback?.(elementName);
-			element.remove();
+			if (listContent(this.data).contains(elementName)) {
+				listContent(this.data).remove(elementName);
+				this.save();
+				elementSpan.remove();
+			}
 		});
 	}
 
