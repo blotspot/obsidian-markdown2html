@@ -72,10 +72,12 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 		buttonTooltip: string,
 		listContent: (settings: Markdown2HtmlSettings) => string[]
 	) {
-		const listDiv = createDiv({ cls: "setting-command-hotkeys" });
-		let input: TextComponent;
 		const setting = new Setting(containerEl).setName(name).setDesc(desc);
+		const listDiv = createDiv({ cls: ["setting-command-hotkeys", "md2html-list"] });
+		// setting.settingEl.classList.add("md2html-list-setting");
+		containerEl.appendChild(listDiv);
 
+		let input: TextComponent;
 		const addElement = async () => {
 			input
 				.getValue()
@@ -96,7 +98,6 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 				});
 		};
 
-		setting.controlEl.appendChild(listDiv);
 		setting
 			.addText(text => {
 				input = text;
@@ -107,7 +108,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 					}
 				});
 			})
-			.addButton(button => button.setIcon("plus-circle").setTooltip(buttonTooltip).onClick(addElement));
+			.addExtraButton(button => button.setIcon("plus-circle").setTooltip(buttonTooltip).onClick(addElement));
 
 		listContent(this.data).forEach(value => {
 			this.addListElement(listDiv, value, listContent);

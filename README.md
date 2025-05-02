@@ -2,11 +2,27 @@
 
 A simple [Obsidian](https://obsidian.md) plugin to copy notes as HTML to the clipboard.
 
-## Features
+## What it does
 
--   Converts Markdown content to HTML and saves it to the clipboard.
--   Works with both selected text and entire documents.
--   Available on all platforms.
+1. Converts the Markdown content of a note to HTML (either selected text or entire document) using Obsidian's markdown renderer.
+1. Cleans up the HTML from the clutter obsidian likes to add
+   - Removes all atrributes from tags (a list of attributes to keep can be configured in the settings)
+   - Removes all classes (a list of classes to keep can be configured in the settings)
+   - Converts internal images into base64 strings
+   - Removes empty paragraphs (left overs from Comment blocks, for example)
+1. Saves the resulting HTML to the clipboard.
+
+> [!NOTE]  
+> This plugin does generate a full HTML page and I don't intend to add that feature
+
+## Tested on
+
+- Desktop (Windows)
+- iOS
+- Android
+
+> [!TIP] On Android
+> Paste contents through the context menu of the text field and not through the keyboard copy option, since that method doesn't cut off the string after a certain amount of characters.
 
 ## Installation
 
@@ -29,7 +45,6 @@ A simple [Obsidian](https://obsidian.md) plugin to copy notes as HTML to the cli
 
 Beta plugins can be updated using the command palette by running the command `Check for updates to all beta plugins and UPDATE`. Optionally, beta plugins can be configured to auto-update when starting Obsidian. This feature can be enabled in the BRAT plugin settings tab.
 
-
 ## Usage
 
 1. Open the command palette (default is `Ctrl+P` or `Cmd+P`) and search for **"markdown2html"**.
@@ -37,4 +52,4 @@ Beta plugins can be updated using the command palette by running the command `Ch
 
 ## API Documentation
 
--   Obsidian: https://github.com/obsidianmd/obsidian-api
+- Obsidian: https://github.com/obsidianmd/obsidian-api

@@ -18,3 +18,10 @@
     transform: rotate(360deg);
   }
 }
+
+.md2html-list {
+  padding: 0.75em 0;
+  width: 100%;
+  display: flex;
+  justify-content: right;
+}
