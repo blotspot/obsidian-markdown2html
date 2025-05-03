@@ -22,7 +22,7 @@ A simple [Obsidian](https://obsidian.md) plugin to copy notes as HTML to the cli
 - Android
 
 > [!TIP]
-> **On Android**
+> **On Android:**
 > Paste contents through the context menu of the text field and not through the keyboard copy option, since that method doesn't cut off the string after a certain amount of characters.
 
 ## Installation
