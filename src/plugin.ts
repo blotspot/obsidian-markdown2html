@@ -21,7 +21,11 @@ export default class Markdown2Html extends Plugin {
 		// add custom icon
 		addIcon(
 			"markdown2html-icon",
-			`<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="8.33"><path d="M72.499 8.333v24.915l-10.381-8.305 10.381 8.305 10.381-8.305M17.12 33.333V8.419l15.572 12.457L48.263 8.333v25"/><path d="M34.357 66.696 21.842 79.21l12.515 12.457M46.871 91.637l6.258-24.97M65.643 66.696 78.158 79.21 65.643 91.667"/><path d="M8.333 50h83.334"/></g>`
+			`<g transform="scale(4.1666)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+			<path d="M17.5 2 17.5 8 15 6 17.5 8 20 6M4.11 8 4.11 2 7.85 5 11.5 2 11.5 8"/>
+			<path d="M8.25 16 5.25 19 8.25 22M11.25 22 12.75 16M15.75 16 18.75 19 15.75 22"/>
+			<path d="M2,12L22,12"/>
+			</g>`
 		);
 
 		// init settings
