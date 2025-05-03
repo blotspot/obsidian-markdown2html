@@ -3,25 +3,34 @@ import { App, debounce, Editor, MarkdownRenderer, Modal, Notice, Plugin, setIcon
 import { Markdown2HtmlSettings, Markdown2HtmlSettingsTab as Markdown2HtmlSettingsTab } from "./settings";
 
 export default class Markdown2Html extends Plugin {
-	private copyInProgress: boolean = false;
-	private copyInProgressModal: CopyInProgressModal;
-	private copyResult: HTMLElement;
+	private copyInProgressModal: Modal;
+	private copyResult: HTMLElement | null;
 
 	async onload() {
+		// init settings
+		const settingsTab = new Markdown2HtmlSettingsTab(this.app, this);
+		this.addSettingTab(settingsTab);
+
+		// init modal
+		this.copyInProgressModal = new Modal(this.app);
+		this.copyInProgressModal.titleEl.setText("Copying to clipboard...");
+		const rotateDiv = createDiv({ parent: this.copyInProgressModal.contentEl, cls: "md2html-rotate" });
+		setIcon(rotateDiv, "loader");
+
+		// add copy command
 		this.addCommand({
 			id: "clipboard",
 			icon: "clipboard-copy",
 			name: "Copy selection or document to clipboard",
 			editorCallback: this.copyCallback,
 		});
-		const settingsTab = new Markdown2HtmlSettingsTab(this.app, this);
-		this.addSettingTab(settingsTab);
-		this.copyInProgressModal = new CopyInProgressModal(this.app);
+
+		// register post processor to monitor copy progress
 		this.registerMarkdownPostProcessor(async (el, ctx) => {
 			// INFO:
 			// We can't unregister the post processor, and all postprocessors are called every time a render is triggered.
 			// To test if the render was triggered by our copy process, we check if our copy process is in progress.
-			if (this.copyInProgress) {
+			if (this.copyResult != null) {
 				// Get's called after every segment (can be multiple for renders with plugins like dataview).
 				// Since it has a debaounce delay that will reset after every call,
 				// this function will execute effectively only once after all rendering actions are fully done
@@ -34,7 +43,6 @@ export default class Markdown2Html extends Plugin {
 	private copyCallback = async (editor: Editor) => {
 		this.startCopyProcess();
 
-		this.copyResult = createDiv();
 		const path = this.app.workspace.activeEditor?.file?.path ?? "";
 		const content = () => {
 			if (editor.somethingSelected()) {
@@ -45,14 +53,14 @@ export default class Markdown2Html extends Plugin {
 		};
 
 		console.debug("Markdown2Html: Copying to clipboard", path);
-		await MarkdownRenderer.render(this.app, content(), this.copyResult, path, this);
+		await MarkdownRenderer.render(this.app, content(), this.copyResult as HTMLElement, path, this);
 	};
 
 	/** Cleans up the rendered HTML and stores it in the system clipboard. */
 	private copyToClipboard = debounce(
 		async (settings: Markdown2HtmlSettings) => {
 			navigator.clipboard
-				.writeText(await cleanHtml(this.copyResult, settings))
+				.writeText(await cleanHtml(this.copyResult as HTMLElement, settings))
 				.then(() => new Notice("HTML copied to the clipboard", 3500))
 				.catch(() => new Notice("Couldn't copy html to the clipboard", 3500))
 				.finally(() => this.endCopyProcess());
@@ -62,25 +70,14 @@ export default class Markdown2Html extends Plugin {
 	);
 
 	private startCopyProcess() {
-		this.copyInProgress = true;
+		this.copyResult = createDiv();
 		this.copyInProgressModal.open();
 	}
 
 	private endCopyProcess() {
-		this.copyInProgress = false;
-		this.copyResult.innerHTML = "";
+		this.copyResult = null;
 		this.copyInProgressModal.close();
 	}
 
 	onunload() {}
-}
-
-class CopyInProgressModal extends Modal {
-	constructor(app: App) {
-		super(app);
-		const { titleEl, contentEl } = this;
-		titleEl.setText("Copy markdown as HTML to clipboard");
-		const rotateDiv = createDiv({ parent: contentEl, cls: "md2html-rotate" });
-		setIcon(rotateDiv, "loader");
-	}
 }
