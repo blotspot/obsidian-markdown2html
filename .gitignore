@@ -20,6 +20,10 @@ main.js
 # Exclude sourcemaps
 *.map
 
+# Exclude scripts
+*.sh
+*.bat
+
 # obsidian
 data.json
 
