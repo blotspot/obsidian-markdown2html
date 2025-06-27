@@ -13,7 +13,7 @@ A simple [Obsidian](https://obsidian.md) plugin to copy notes as HTML to the cli
 1. Saves the resulting HTML to the clipboard.
 
 > [!NOTE]  
-> This plugin does generate a full HTML page and I don't intend to add that feature
+> This plugin doesn't generate a full HTML page and I don't intend to add that feature
 
 ## Tested on
 
