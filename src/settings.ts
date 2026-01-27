@@ -1,6 +1,7 @@
-import { App, debounce, ExtraButtonComponent, PluginSettingTab, Setting, TextComponent } from "obsidian";
+import { App, debounce, ExtraButtonComponent, PluginSettingTab, requireApiVersion, Setting, TextComponent } from "obsidian";
 import Markdown2Html from "src/plugin";
 import { isEmpty } from "./utils";
+import { MD2HTML_ICON } from "./constants";
 
 export interface Markdown2HtmlSettings {
 	attributeList: string[];
@@ -15,6 +16,8 @@ export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
 export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 	private plugin: Markdown2Html;
 	private data: Markdown2HtmlSettings;
+
+	public icon = MD2HTML_ICON;
 
 	constructor(app: App, plugin: Markdown2Html) {
 		super(app, plugin);
