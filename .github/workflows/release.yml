@@ -10,12 +10,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Use Node.js (24.x)
+        uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: "24.x"
+          cache: "npm"
 
       - name: Build plugin
         run: |
@@ -24,7 +25,7 @@ jobs:
 
       - name: Zip output
         run: |
-          zip markdown2html.zip main.js manifest.json styles.css
+          zip plugin.zip main.js manifest.json styles.css
 
       - name: Create release
         env:
@@ -32,7 +33,19 @@ jobs:
         run: |
           tag="${GITHUB_REF#refs/tags/}"
 
-          gh release create "$tag" \
-            --title="Release $tag" \
-            --draft \
-            main.js manifest.json styles.css markdown2html.zip
+          files=(main.js manifest.json styles.css plugin.zip)
+          args=()
+          for f in "${files[@]}"; do
+              if [ -s "$f" ]; then
+                  args+=("$f")
+              else
+                  echo "Skipping empty or missing asset: $f"
+              fi
+          done
+
+          if [ ${#args[@]} -eq 0 ]; then
+              echo "No non-empty assets to attach; creating draft without assets"
+              gh release create "$tag" --title="Release $tag" --draft
+          else
+              gh release create "$tag" --title="Release $tag" --draft "${args[@]}"
+          fi
