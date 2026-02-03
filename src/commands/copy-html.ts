@@ -6,6 +6,7 @@ import {
   Editor,
   MarkdownRenderer,
   Notice,
+  Platform,
   requestUrl,
   TFile,
 } from "obsidian";
@@ -53,12 +54,18 @@ export default class CopyHtml {
         Log.d("Rendering finished, cleaning HTML...");
         const data = await this.cleanHtml(this.htmlRoot, settings);
         Log.d("Copying HTML to clipboard...");
-        const item = new ClipboardItem({
-          "text/plain": new Blob([data], { type: "text/plain" }),
-          "text/html": new Blob([data], { type: "text/html" }),
-        });
-        navigator.clipboard.write([item])
-          .then(() => new Notice("HTML copied to the clipboard", 3500))
+        let clipboardWrite: Promise<void>;
+        if (Platform.isDesktopApp) {
+          const item = new ClipboardItem({
+            "text/plain": new Blob([data], { type: "text/plain" }),
+            "text/html": new Blob([data], { type: "text/html" }),
+          });
+          clipboardWrite = navigator.clipboard.write([item])
+        } else {
+          // mobile obsidian can't do the fancy stuff with html mime type
+          clipboardWrite = navigator.clipboard.writeText(data);
+        }
+          clipboardWrite.then(() => new Notice("HTML copied to the clipboard", 3500))
           .catch((e) => {
             Log.e("Error while copying HTML to the clipboard", e);
             new Notice("Couldn't copy HTML to the clipboard", 3500);
