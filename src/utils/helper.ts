@@ -3,10 +3,12 @@ import { APP_NAME } from "./constants";
 
 export async function getContent(app: App, contentProvider: Editor | TFile) {
   if (contentProvider instanceof Editor) {
+    Log.d("Reading content from editor selection or full note");
     return contentProvider.somethingSelected()
       ? contentProvider.getSelection()
       : contentProvider.getValue();
   } else {
+    Log.d(`Reading content of file: ${contentProvider.path}`);
     return app.vault.read(contentProvider);
   }
 }

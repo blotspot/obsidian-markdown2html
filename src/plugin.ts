@@ -16,6 +16,7 @@ import {
   PLAINTXT_ACTION_TEXT,
   PLAINTXT_ICON,
 } from "./utils/constants";
+import { Log } from "utils/helper";
 
 export default class Markdown2Html extends Plugin {
   async onload() {
@@ -140,6 +141,7 @@ export default class Markdown2Html extends Plugin {
       // We can't unregister the post processor, and all postprocessors are called every time a render is triggered.
       // To test if the render was triggered by our copy process, we check if our copy process is in progress.
       if (copyAsHtmlCommand.copyInProgress()) {
+        Log.d("HTML rendering segment finished...");
         // Get's called after every segment (can be multiple for renders with plugins like dataview).
         // Since it has a debaounce delay that will reset after every call,
         // this function will execute effectively only once after all rendering actions are fully done

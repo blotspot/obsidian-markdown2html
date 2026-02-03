@@ -12,17 +12,13 @@ export default class CopyPlainText {
   }
 
   async copyToClipboard(contentProvider: Editor | TFile) {
+    Log.d("Starting copy process...");
     this.modal.open();
-    const fileContents = await getContent(this.app, contentProvider);
-    const fmtInfo = getFrontMatterInfo(fileContents);
-
-    navigator.clipboard
-      .writeText(
-        (fmtInfo.exists
-          ? fileContents.slice(fmtInfo.contentStart)
-          : fileContents
-        ).trim(),
-      )
+    const content = await getContent(this.app, contentProvider);
+    const fmtInfo = getFrontMatterInfo(content);
+    const text = (fmtInfo.exists ? content.slice(fmtInfo.contentStart) : content).trim();
+    Log.d("Copying text to clipboard...");
+    navigator.clipboard.writeText(text)
       .then(() => new Notice("Text copied to the clipboard", 3500))
       .catch((e) => {
         Log.e("Error while copying text to the clipboard", e);
@@ -30,6 +26,7 @@ export default class CopyPlainText {
       })
       .finally(() => {
         this.modal.close();
+        Log.d("Copy process finished.");
       });
   }
 }

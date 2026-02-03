@@ -19,7 +19,7 @@ export default class CopyHtml {
 
   private inProgress: boolean = false;
   // eslint-disable-next-line no-undef
-  private copyResult: HTMLDivElement = createDiv();
+  private htmlRoot: HTMLDivElement = createDiv();
   private copyComponent = new Component();
 
   constructor(app: App) {
@@ -33,13 +33,8 @@ export default class CopyHtml {
     try {
       this.startCopyProcess();
       const path = this.app.workspace.activeEditor?.file?.path ?? "";
-      void MarkdownRenderer.render(
-        this.app,
-        await getContent(this.app, contentProvider),
-        this.copyResult as HTMLElement,
-        path,
-        this.copyComponent,
-      );
+      const content = await getContent(this.app, contentProvider);
+      void MarkdownRenderer.render(this.app, content, this.htmlRoot, path, this.copyComponent);
     } catch (e) {
       Log.e("Error while rendering HTML", e);
       new Notice("Error while rendering HTML", 3500);
@@ -55,10 +50,14 @@ export default class CopyHtml {
   copyToClipboard = debounce(
     async (settings: Markdown2HtmlSettings) => {
       if (this.copyInProgress()) {
-        navigator.clipboard
-          .writeText(
-            await this.cleanHtml(this.copyResult, settings),
-          )
+        Log.d("Rendering finished, cleaning HTML...");
+        const data = await this.cleanHtml(this.htmlRoot, settings);
+        Log.d("Copying HTML to clipboard...");
+        const item = new ClipboardItem({
+          "text/plain": new Blob([data], { type: "text/plain" }),
+          "text/html": new Blob([data], { type: "text/html" }),
+        });
+        navigator.clipboard.write([item])
           .then(() => new Notice("HTML copied to the clipboard", 3500))
           .catch((e) => {
             Log.e("Error while copying HTML to the clipboard", e);
@@ -76,14 +75,16 @@ export default class CopyHtml {
   }
 
   private startCopyProcess() {
+    Log.d("Starting copy process...");
     this.inProgress = true;
     this.modal.open();
   }
 
   private endCopyProcess() {
     this.inProgress = false;
-    this.copyResult.empty();
+    this.htmlRoot.empty();
     this.modal.close();
+    Log.d("Copy process finished.");
   }
 
 

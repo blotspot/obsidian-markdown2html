@@ -7,11 +7,12 @@ import {
 } from "obsidian";
 import Markdown2Html from "plugin";
 import { MD2HTML_ICON } from "./utils/constants";
-import { isEmpty } from "./utils/helper";
+import { isEmpty, Log } from "./utils/helper";
 
 export interface Markdown2HtmlSettings {
   attributeList: string[];
   classList: string[];
+  devMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
     "rowspan",
   ],
   classList: [],
+  devMode: false,
 };
 
 export class Markdown2HtmlSettingsTab extends PluginSettingTab {
@@ -83,6 +85,18 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
       "Add class to keep",
       (settings) => settings.classList,
     );
+
+    new Setting(containerEl).setHeading().setName("Developer mode");
+    new Setting(containerEl)
+      .setName("Developer mode")
+      .setDesc("Enable debug logs in the developer tools.")
+      .addToggle(toggle =>
+        toggle.setValue(this.data.devMode).onChange(async value => {
+          this.data.devMode = value;
+          Log.devMode = value;
+          this.save();
+        }),
+      );
   }
 
   private newListSetting(
@@ -171,6 +185,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
       DEFAULT_SETTINGS,
       (await this.plugin.loadData()) as Markdown2HtmlSettings,
     );
+    Log.devMode = this.data.devMode;
   }
 
   /**
