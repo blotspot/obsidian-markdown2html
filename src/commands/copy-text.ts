@@ -1,4 +1,4 @@
-import { App, Editor, getFrontMatterInfo, Notice, TFile } from "obsidian";
+import { App, Editor, Notice, TFile } from "obsidian";
 import CopyInProgressModal from "ui/copy-modal";
 import { getContent, Log } from "utils/helper";
 
@@ -15,10 +15,8 @@ export default class CopyPlainText {
     Log.d("Starting copy process...");
     this.modal.open();
     const content = await getContent(this.app, contentProvider);
-    const fmtInfo = getFrontMatterInfo(content);
-    const text = (fmtInfo.exists ? content.slice(fmtInfo.contentStart) : content).trim();
     Log.d("Copying text to clipboard...");
-    navigator.clipboard.writeText(text)
+    navigator.clipboard.writeText(content)
       .then(() => new Notice("Text copied to the clipboard", 3500))
       .catch((e) => {
         Log.e("Error while copying text to the clipboard", e);

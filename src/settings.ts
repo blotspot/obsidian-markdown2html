@@ -77,14 +77,15 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl).setHeading().setName("Classes");
-    this.newListSetting(
-      containerEl,
-      "Classes to keep",
-      "Add class name(s) you want to keep when rendering markdown to HTML.",
-      "Add class to keep",
-      (settings) => settings.classList,
-    );
+      // TODO: idk if this is needed
+    // new Setting(containerEl).setHeading().setName("Classes");
+    // this.newListSetting(
+    //   containerEl,
+    //   "Classes to keep",
+    //   "Add class name(s) you want to keep when rendering markdown to HTML.",
+    //   "Add class to keep",
+    //   (settings) => settings.classList,
+    // );
 
     new Setting(containerEl).setHeading().setName("Developer mode");
     new Setting(containerEl)

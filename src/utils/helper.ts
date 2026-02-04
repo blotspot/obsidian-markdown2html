@@ -1,16 +1,28 @@
-import { App, Editor, TFile } from "obsidian";
+import { App, Editor, getFrontMatterInfo, TFile } from "obsidian";
 import { APP_NAME } from "./constants";
 
-export async function getContent(app: App, contentProvider: Editor | TFile) {
+export async function getContent(app: App, contentProvider: Editor | TFile): Promise<string> {
+  let contentPromise: Promise<string>;
   if (contentProvider instanceof Editor) {
     Log.d("Reading content from editor selection or full note");
-    return contentProvider.somethingSelected()
+    contentPromise = Promise.resolve(contentProvider.somethingSelected()
       ? contentProvider.getSelection()
-      : contentProvider.getValue();
+      : contentProvider.getValue());
   } else {
     Log.d(`Reading content of file: ${contentProvider.path}`);
-    return app.vault.read(contentProvider);
+    contentPromise = app.vault.read(contentProvider);
   }
+  return contentPromise
+    .then((content) => {
+      Log.d(`Content length: ${content.length} characters`);
+      const fmtInfo = getFrontMatterInfo(content);
+      return (fmtInfo.exists ? content.slice(fmtInfo.contentStart) : content).trim();
+    })
+    .catch((e) => {
+      Log.e("Error while reading content", e);
+      throw e;
+    });
+
 }
 
 export function removeEmptyLines(text: string): string {
@@ -28,6 +40,10 @@ export class Log {
     if (Log.devMode) {
       console.debug(`[DEBUG] ${APP_NAME} - `, msg);
     }
+  }
+
+  public static w(msg: string) {
+    console.warn(`[WARN] ${APP_NAME} - `, msg);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
