@@ -1,9 +1,9 @@
 {
-	"id": "markdown2html",
-	"name": "Copy Document as HTML",
-	"version": "1.1.9",
+	"id": "content-copy",
+	"name": "Content Copy",
+	"version": "1.2.0",
 	"minAppVersion": "0.15.0",
-	"description": "Renders a document as HTML and saves it to the clipboard.",
+	"description": "Copies a document as HTML or text and saves it to the clipboard.",
 	"author": "blotspot",
 	"authorUrl": "https://github.com/blotspot",
 	"fundingUrl": "https://ko-fi.com/blotspot",

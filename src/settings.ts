@@ -6,13 +6,14 @@ import {
   TextComponent
 } from "obsidian";
 import Markdown2Html from "plugin";
-import { MD2HTML_ICON } from "./utils/constants";
+import { NOTE2HTML_ICON } from "./utils/constants";
 import { isEmpty, Log } from "./utils/helper";
 
 export interface Markdown2HtmlSettings {
   attributeList: string[];
   classList: string[];
   devMode: boolean;
+  removeFrontmatter: boolean;
 }
 
 export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
@@ -28,13 +29,14 @@ export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
   ],
   classList: [],
   devMode: false,
+  removeFrontmatter: true,
 };
 
 export class Markdown2HtmlSettingsTab extends PluginSettingTab {
   private plugin: Markdown2Html;
   private data: Markdown2HtmlSettings;
 
-  public icon = MD2HTML_ICON;
+  public icon = NOTE2HTML_ICON;
 
   constructor(plugin: Markdown2Html) {
     super(plugin.app, plugin);
@@ -50,7 +52,17 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    new Setting(containerEl).setHeading().setName("Attributes");
+    new Setting(containerEl)
+      .setName("Remove frontmatter")
+      .setDesc("When enabled, the frontmatter of notes will be removed during copy.")
+      .addToggle(toggle =>
+        toggle.setValue(this.data.removeFrontmatter).onChange(async value => {
+          this.data.removeFrontmatter = value;
+          this.save();
+        }),
+      );
+
+    new Setting(containerEl).setHeading().setName("HTML cleanup");
     this.newListSetting(
       containerEl,
       "Attributes to keep",
@@ -77,18 +89,15 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
           }),
       );
 
-      // TODO: idk if this is needed
-    // new Setting(containerEl).setHeading().setName("Classes");
-    // this.newListSetting(
-    //   containerEl,
-    //   "Classes to keep",
-    //   "Add class name(s) you want to keep when rendering markdown to HTML.",
-    //   "Add class to keep",
-    //   (settings) => settings.classList,
-    // );
-
-    new Setting(containerEl).setHeading().setName("Developer mode");
+    this.newListSetting(
+      containerEl,
+      "Classes to keep",
+      "When you don't have the atribute 'class' in the above list, the cleanup will remove all classes from elements. In case you want to keep specific classes, you can add exceptions here.",
+      "Add class to keep",
+      (settings) => settings.classList,
+    );
     new Setting(containerEl)
+      .setHeading()
       .setName("Developer mode")
       .setDesc("Enable debug logs in the developer tools.")
       .addToggle(toggle =>
@@ -153,6 +162,8 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
     listContent(this.data).forEach((value) => {
       this.addListElement(listDiv, value, listContent);
     });
+
+    return setting;
   }
 
   private addListElement(

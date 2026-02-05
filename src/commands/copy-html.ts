@@ -2,15 +2,13 @@ import {
   App,
   Component,
   debounce,
-  Editor,
   MarkdownRenderer,
   Notice,
-  Platform,
-  TFile
+  Platform
 } from "obsidian";
 import { Markdown2HtmlSettings } from "settings";
 import CopyInProgressModal from "ui/copy-modal";
-import { getContent, isEmpty, Log, removeEmptyLines } from "utils/helper";
+import { isEmpty, Log, removeEmptyLines } from "utils/helper";
 
 export default class CopyHtml {
   private app: App;
@@ -28,12 +26,11 @@ export default class CopyHtml {
   }
 
   /** triggers the render of the markdown note or selection. */
-  async renderHtml(contentProvider: Editor | TFile) {
+  async renderHtml(content: Promise<string>) {
     try {
       this.startCopyProcess();
       const path = this.app.workspace.activeEditor?.file?.path ?? "";
-      const content = await getContent(this.app, contentProvider);
-      void MarkdownRenderer.render(this.app, content, this.htmlRoot, path, this.copyComponent);
+      void MarkdownRenderer.render(this.app, await content, this.htmlRoot, path, this.copyComponent);
     } catch (e) {
       Log.e("Error while rendering HTML", e);
       new Notice("Error while rendering HTML", 3500);

@@ -3,6 +3,7 @@ import CopyPlainText from "commands/copy-text";
 import {
   addIcon,
   Editor,
+  getFrontMatterInfo,
   MarkdownView,
   Menu,
   Plugin,
@@ -10,19 +11,19 @@ import {
   TFile,
 } from "obsidian";
 import { Markdown2HtmlSettingsTab } from "settings";
-import {
-  HTML2CLIP_ACTION_TEXT as MD2HTML_ACTION_TEXT,
-  MD2HTML_ICON,
-  PLAINTXT_ACTION_TEXT,
-  PLAINTXT_ICON,
-} from "./utils/constants";
 import { Log } from "utils/helper";
+import {
+  NOTE2CLIP_ACTION_TEXT as MD2HTML_ACTION_TEXT,
+  NOTE2HTML_ICON,
+  NOTE2TXT_ACTION_TEXT,
+  NOTE2TXT_ICON,
+} from "./utils/constants";
 
 export default class Markdown2Html extends Plugin {
   async onload() {
     // add custom icon
     addIcon(
-      MD2HTML_ICON,
+      NOTE2HTML_ICON,
       `<g transform="scale(4.1666)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
 				<path d="M16,3l0,2c0,0.552 -0.448,1 -1,1l-6,0c-0.552,0 -1,-0.448 -1,-1l0,-2c0,-0.552 0.448,-1 1,-1l6,0c0.552,0 1,0.448 1,1Z" />
 				<path d="M16,4l2,0c1.097,0 2,0.903 2,2l0,14c0,1.097 -0.903,2 -2,2l-12,0c-1.097,0 -2,-0.903 -2,-2l0,-14c0,-1.097 0.903,-2 2,-2l2,0" />
@@ -31,7 +32,7 @@ export default class Markdown2Html extends Plugin {
 			</g>`,
     );
     addIcon(
-      PLAINTXT_ICON,
+      NOTE2TXT_ICON,
       `<g transform="scale(4.1666)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
 		     <path d="M16,3l0,2c0,0.552 -0.448,1 -1,1l-6,0c-0.552,0 -1,-0.448 -1,-1l0,-2c0,-0.552 0.448,-1 1,-1l6,0c0.552,0 1,0.448 1,1Z" />
          <path d="M16,4l2,0c1.097,0 2,0.903 2,2l0,14c0,1.097 -0.903,2 -2,2l-12,0c-1.097,0 -2,-0.903 -2,-2l0,-14c0,-1.097 0.903,-2 2,-2l2,0" />
@@ -43,9 +44,9 @@ export default class Markdown2Html extends Plugin {
     const settingsTab = new Markdown2HtmlSettingsTab(this);
     this.addSettingTab(settingsTab);
 
-    //// Add commands
     const copyAsHtmlCommand = new CopyHtml(this.app);
     const copyAsTextCommand = new CopyPlainText(this.app);
+
     // callback function to get the content provider (editor or file)
     const getContentProvider = (): Editor | TFile | null => {
       const view = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -59,63 +60,95 @@ export default class Markdown2Html extends Plugin {
       return null;
     };
 
+    const getContent = async (contentProvider: Editor | TFile): Promise<string> => {
+      let contentPromise: Promise<string>;
+      if (contentProvider instanceof Editor) {
+        Log.d("Reading content from editor selection or full note");
+        contentPromise = Promise.resolve(contentProvider.somethingSelected()
+          ? contentProvider.getSelection()
+          : contentProvider.getValue());
+      } else {
+        Log.d(`Reading content of file: ${contentProvider.path}`);
+        contentPromise = this.app.vault.read(contentProvider);
+      }
+      return contentPromise
+        .then((content) => {
+          Log.d(`Content length: ${content.length} characters`);
+          const fmtInfo = getFrontMatterInfo(content);
+          return (settingsTab.settings.removeFrontmatter && fmtInfo.exists ? content.slice(fmtInfo.contentStart) : content).trim();
+        })
+        .catch((e) => {
+          Log.e("Error while reading content", e);
+          throw e;
+        });
+    }
+
+    const isHtmlRenderAllowed = (extension?: string): boolean => {
+      // disable html copy for canvas files
+      return !!extension && !["canvas", "base"].contains(extension);
+    }
+
     // register copy commands
     this.addCommand({
-      id: "clipboard",
-      icon: MD2HTML_ICON,
+      id: "html",
+      icon: NOTE2HTML_ICON,
       name: MD2HTML_ACTION_TEXT,
       checkCallback: (checking: boolean) => {
         const contentProvider = getContentProvider();
-        if (checking) {
-          return !!contentProvider;
+        if (!!contentProvider && isHtmlRenderAllowed(this.app.workspace.activeEditor?.file?.extension)) {
+          if (!checking) {
+            void copyAsHtmlCommand.renderHtml(getContent(contentProvider));
+          }
+          return true;
         }
-        void copyAsHtmlCommand.renderHtml(contentProvider as Editor | TFile);
-        return true;
+        return false;
       },
     });
     this.addCommand({
-      id: "txtclipboard",
-      icon: PLAINTXT_ICON,
-      name: PLAINTXT_ACTION_TEXT,
+      id: "txt",
+      icon: NOTE2TXT_ICON,
+      name: NOTE2TXT_ACTION_TEXT,
       checkCallback: (checking: boolean) => {
         const contentProvider = getContentProvider();
-        if (checking) {
-          return !!contentProvider;
+        if (contentProvider) {
+          if (!checking) {
+            void copyAsTextCommand.copyToClipboard(getContent(contentProvider));
+          }
+          return true;
         }
-        void copyAsTextCommand.copyToClipboard(
-          contentProvider as Editor | TFile,
-        );
-        return true;
+        return false;
       },
     });
 
     // add ribon action
-    this.addRibbonIcon(MD2HTML_ICON, MD2HTML_ACTION_TEXT, () => {
+    this.addRibbonIcon(NOTE2HTML_ICON, MD2HTML_ACTION_TEXT, () => {
       const contentProvider = getContentProvider();
-      if (contentProvider !== null) {
-        void copyAsHtmlCommand.renderHtml(contentProvider);
+      if (contentProvider !== null && isHtmlRenderAllowed(this.app.workspace.activeEditor?.file?.extension)) {
+        void copyAsHtmlCommand.renderHtml(getContent(contentProvider));
       }
     });
 
     // register context menu events
-    const addMenuItems = (menu: Menu, contentProvider: Editor | TFile) => {
+    const addMenuItems = (menu: Menu, contentProvider: Editor | TFile, extension?: string) => {
       menu.addSeparator();
       // add html copy item
-      menu.addItem((item) => {
-        item
-          .setTitle(MD2HTML_ACTION_TEXT)
-          .setIcon(MD2HTML_ICON)
-          .onClick(
-            async () => void copyAsHtmlCommand.renderHtml(contentProvider),
-          );
-      });
+      if (isHtmlRenderAllowed(extension)) {
+        menu.addItem((item) => {
+          item
+            .setTitle(MD2HTML_ACTION_TEXT)
+            .setIcon(NOTE2HTML_ICON)
+            .onClick(
+              async () => void copyAsHtmlCommand.renderHtml(getContent(contentProvider)),
+            );
+        });
+      }
       // add text copy item
       menu.addItem((item) => {
         item
-          .setTitle(PLAINTXT_ACTION_TEXT)
-          .setIcon(PLAINTXT_ICON)
+          .setTitle(NOTE2TXT_ACTION_TEXT)
+          .setIcon(NOTE2TXT_ICON)
           .onClick(
-            async () => void copyAsTextCommand.copyToClipboard(contentProvider),
+            async () => void copyAsTextCommand.copyToClipboard(getContent(contentProvider)),
           );
       });
       menu.addSeparator();
@@ -124,14 +157,14 @@ export default class Markdown2Html extends Plugin {
     // editor menu
     this.registerEvent(
       this.app.workspace.on("editor-menu", (menu, editor, view) =>
-        addMenuItems(menu, editor),
+        addMenuItems(menu, editor, view.file?.extension),
       ),
     );
     // file menu
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
         if (file instanceof TFile) {
-          addMenuItems(menu, file);
+          addMenuItems(menu, file, file.extension);
         }
       }),
     );
@@ -151,7 +184,7 @@ export default class Markdown2Html extends Plugin {
   }
 
   onunload() {
-    removeIcon(MD2HTML_ICON);
-    removeIcon(PLAINTXT_ICON);
+    removeIcon(NOTE2HTML_ICON);
+    removeIcon(NOTE2TXT_ICON);
   }
 }
