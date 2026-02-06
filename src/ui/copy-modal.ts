@@ -9,7 +9,7 @@ export default class CopyInProgressModal extends Modal {
     
     this.titleEl.setText("Copy in progress...");
     
-    const rotateDiv = contentEl.createDiv({ cls: "md2html-rotate" });
+    const rotateDiv = contentEl.createDiv({ cls: "content-copy-modal-spinner" });
     setIcon(rotateDiv, "loader");
   }
 }

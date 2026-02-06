@@ -1,6 +1,6 @@
 {
     "name": "obsidian-markdown2html-plugin",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "saves markdown as html in the clipboard",
     "main": "main.js",
 	"type": "module",

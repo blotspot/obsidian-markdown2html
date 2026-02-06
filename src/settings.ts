@@ -117,8 +117,10 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
     listContent: (settings: Markdown2HtmlSettings) => string[],
   ) {
     const setting = new Setting(containerEl).setName(name).setDesc(desc);
+
+    setting.controlEl.addClass("content-copy-settings-control")
     const listDiv = containerEl.createDiv({
-      cls: ["setting-command-hotkeys", "md2html-list"],
+      cls: ["setting-command-hotkeys", "content-copy-settings-list"],
     });
 
     let input: TextComponent;

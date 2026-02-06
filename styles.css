@@ -1,16 +1,16 @@
-.md2html-rotate {
-  animation: md2html-rotating 2s linear infinite;
+.content-copy-modal-spinner {
+  animation: content-copy-modal-spin 2s linear infinite;
   width: 24px;
   display: block;
   margin: auto;
 }
 
-.md2html-rotate > svg {
+.content-copy-modal-spinner > svg {
   margin: auto;
   display: block;
 }
 
-@keyframes md2html-rotating {
+@keyframes content-copy-modal-spin {
   from {
     transform: rotate(0deg);
   }
@@ -19,10 +19,19 @@
   }
 }
 
-.md2html-list {
+.content-copy-settings-list {
   padding: var(--size-4-4);
   margin-bottom: var(--size-4-2);
   width: 100%;
   display: flex;
   justify-content: right;
+}
+
+.is-tablet .modal .setting-item:has(.content-copy-settings-control) {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.is-tablet .modal .content-copy-settings-control {
+  width: 100%;
 }
