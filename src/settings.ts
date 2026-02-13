@@ -53,7 +53,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
       "Attributes to keep",
       "Add attribute name(s) you want to keep when rendering markdown to HTML.",
       "Add attribute to keep",
-      settings => settings.attributeList
+      this.data.attributeList
     );
 
     new Setting(containerEl)
@@ -77,7 +77,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
       "Classes to keep",
       "When you don't have the atribute 'class' in the above list, the cleanup will remove all classes from elements. In case you want to keep specific classes, you can add exceptions here.",
       "Add class to keep",
-      settings => settings.classList
+      this.data.classList
     );
     new Setting(containerEl)
       .setHeading()
@@ -97,7 +97,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
     name: string,
     desc: string,
     buttonTooltip: string,
-    listContent: (settings: Markdown2HtmlSettings) => string[]
+    listContent: string[]
   ) {
     const setting = new Setting(containerEl).setName(name).setDesc(desc);
 
@@ -116,8 +116,8 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
           value = value.replace(/[ ~!@$%^&*()+=,./';:"?><[\]\\{}|`#]/g, "");
 
           // add to list if not already in list
-          if (!isEmpty(value) && !listContent(this.data).contains(value)) {
-            listContent(this.data).push(value);
+          if (!isEmpty(value) && !listContent.contains(value)) {
+            listContent.push(value);
             this.addListElement(listDiv, value, listContent);
             this.save();
             input.setValue("");
@@ -139,7 +139,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
       })
       .addExtraButton(button => button.setIcon("plus-circle").setTooltip(buttonTooltip).onClick(addElement));
 
-    listContent(this.data).forEach(value => {
+    listContent.forEach(value => {
       this.addListElement(listDiv, value, listContent);
     });
 
@@ -149,7 +149,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
   private addListElement(
     containerEl: HTMLElement,
     elementName: string,
-    listContent: (settings: Markdown2HtmlSettings) => string[]
+    listContent: string[]
   ) {
     const elementSpan = containerEl.createSpan({
       cls: "setting-hotkey",
@@ -160,8 +160,8 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
     delBtn.setIcon("cross");
     delBtn.setTooltip(`Delete '${elementName}' from list`);
     delBtn.onClick(() => {
-      if (listContent(this.data).contains(elementName)) {
-        listContent(this.data).remove(elementName);
+      if (listContent.contains(elementName)) {
+        listContent.remove(elementName);
         this.save();
         elementSpan.remove();
       }

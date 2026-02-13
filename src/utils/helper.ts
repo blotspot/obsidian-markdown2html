@@ -13,16 +13,20 @@ export class Log {
 
   public static d(msg: string) {
     if (Log.devMode) {
-      console.debug(`[DEBUG] ${APP_NAME} - `, msg);
+      console.debug("[DEBUG]", APP_NAME, new Date().toISOString(), "-", msg);
     }
   }
 
   public static w(msg: string) {
-    console.warn(`[WARN] ${APP_NAME} - `, msg);
+    console.warn("[WARN]", APP_NAME, new Date().toISOString(), "-", msg);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public static e(msg: string, error?: any) {
-    console.error(`[ERROR] ${APP_NAME} - `, msg, error);
+  public static e(msg: string, error?: unknown) {
+    if (error instanceof Error) {
+      console.error("[ERROR]", APP_NAME, new Date().toISOString(), "-", msg, error.message, error.stack);
+    } else {
+      console.error("[ERROR]", APP_NAME, new Date().toISOString(), "-", msg, error);
+    }
   }
+
 }

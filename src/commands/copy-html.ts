@@ -1,4 +1,4 @@
-import { App, Component, debounce, MarkdownRenderer, Notice, Platform } from "obsidian";
+import { App, Component, MarkdownRenderer, Notice, Platform } from "obsidian";
 import { Markdown2HtmlSettings } from "settings";
 import CopyInProgressModal from "ui/copy-modal";
 import { isEmpty, Log, removeEmptyLines } from "utils/helper";
@@ -7,8 +7,7 @@ export default class CopyHtml {
   private app: App;
   private modal: CopyInProgressModal;
 
-  private inProgress: boolean = false;
-  // eslint-disable-next-line no-undef
+  private _inProgress: boolean = false;
   private htmlRoot: HTMLDivElement = createDiv();
   private copyComponent = new Component();
 
@@ -36,48 +35,44 @@ export default class CopyHtml {
    * Executes after a short delay to make sure all steps of the rendering are done.
    * Each time the method is called within the delay, the timer resets.
    */
-  copyToClipboard = debounce(
-    async (settings: Markdown2HtmlSettings) => {
-      if (this.copyInProgress()) {
-        Log.d("Rendering finished, cleaning HTML...");
-        const data = await this.cleanHtml(settings);
-        Log.d("Copying HTML to clipboard...");
-        let clipboardWrite: Promise<void>;
-        if (Platform.isDesktopApp) {
-          const item = new ClipboardItem({
-            "text/plain": new Blob([data], { type: "text/plain" }),
-            "text/html": new Blob([data], { type: "text/html" }),
-          });
-          clipboardWrite = navigator.clipboard.write([item]);
-        } else {
-          // mobile obsidian can't do the fancy stuff with html mime type
-          clipboardWrite = navigator.clipboard.writeText(data);
-        }
-        clipboardWrite
-          .then(() => new Notice("HTML copied to the clipboard", 3500))
-          .catch(e => {
-            Log.e("Error while copying HTML to the clipboard", e);
-            new Notice("Couldn't copy HTML to the clipboard", 3500);
-          })
-          .finally(() => this.endCopyProcess());
+  async copyToClipboard(settings: Markdown2HtmlSettings) {
+    if (this.inProgress) {
+      Log.d("Rendering finished, cleaning HTML...");
+      const data = await this.cleanHtml(settings);
+      Log.d("Copying HTML to clipboard...");
+      let clipboardWrite: Promise<void>;
+      if (Platform.isDesktopApp) {
+        const item = new ClipboardItem({
+          "text/plain": new Blob([data], { type: "text/plain" }),
+          "text/html": new Blob([data], { type: "text/html" }),
+        });
+        clipboardWrite = navigator.clipboard.write([item]);
+      } else {
+        // mobile obsidian can't do the fancy stuff with html mime type
+        clipboardWrite = navigator.clipboard.writeText(data);
       }
-    },
-    250 /* wait delay until copy to clipboard happens */,
-    true /* reset delay if method is called before timer finishes */
-  );
+      clipboardWrite
+        .then(() => new Notice("HTML copied to the clipboard", 3500))
+        .catch(e => {
+          Log.e("Error while copying HTML to the clipboard", e);
+          new Notice("Couldn't copy HTML to the clipboard", 3500);
+        })
+        .finally(() => this.endCopyProcess());
+    }
+  }
 
-  copyInProgress() {
-    return this.inProgress;
+  get inProgress(): boolean {
+    return this._inProgress;
   }
 
   private startCopyProcess() {
     Log.d("Starting copy process...");
-    this.inProgress = true;
+    this._inProgress = true;
     this.modal.open();
   }
 
   private endCopyProcess() {
-    this.inProgress = false;
+    this._inProgress = false;
     this.htmlRoot.empty();
     this.modal.close();
     Log.d("Copy process finished.");
@@ -151,8 +146,7 @@ export default class CopyHtml {
     Log.d(`Converting internal image to base64: ${src}`);
     // Note: using fetch instead of requestUrl because requestUrl only works with http(s) URLs
     //       and we want to resolve an internal file URL.
-    // eslint-disable-next-line no-restricted-globals
-    return fetch(src)
+    return globalThis.fetch(src)
       .then(res => res.blob())
       .then(
         blob =>

@@ -1,7 +1,7 @@
 import CopyHtml from "commands/copy-html";
 import CopyPlainText from "commands/copy-text";
-import { addIcon, Editor, getFrontMatterInfo, MarkdownView, Menu, Plugin, removeIcon, TFile } from "obsidian";
-import { Markdown2HtmlSettingsTab } from "settings";
+import { addIcon, debounce, Editor, getFrontMatterInfo, MarkdownView, Menu, Plugin, removeIcon, TFile } from "obsidian";
+import { Markdown2HtmlSettings as ContentCopySettings, Markdown2HtmlSettingsTab } from "settings";
 import { Log } from "utils/helper";
 import {
   NOTE2CLIP_ACTION_TEXT as MD2HTML_ACTION_TEXT,
@@ -155,17 +155,23 @@ export default class Markdown2Html extends Plugin {
         }
       })
     );
+    const delayedCopyToClipboard = debounce(
+      async (settings: ContentCopySettings) => copyAsHtmlCommand.copyToClipboard(settings),
+      250 /* wait delay until copy to clipboard happens */,
+      true /* reset delay if method is called before timer finishes */
+    );
+
     // register post processor to monitor markdown render progress
     this.registerMarkdownPostProcessor(async (el, ctx) => {
       // INFO:
       // We can't unregister the post processor, and all postprocessors are called every time a render is triggered.
       // To test if the render was triggered by our copy process, we check if our copy process is in progress.
-      if (copyAsHtmlCommand.copyInProgress()) {
+      if (copyAsHtmlCommand.inProgress) {
         Log.d("HTML rendering segment finished...");
         // Get's called after every segment (can be multiple for renders with plugins like dataview).
         // Since it has a debaounce delay that will reset after every call,
         // this function will execute effectively only once after all rendering actions are fully done
-        void copyAsHtmlCommand.copyToClipboard(settingsTab.settings);
+        void delayedCopyToClipboard(settingsTab.settings);
       }
     }, Number.MAX_SAFE_INTEGER /** using a high order number to make sure this renderer goes last at every step */);
   }
