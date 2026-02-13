@@ -1,7 +1,7 @@
 {
 	"id": "markdown2html",
 	"name": "Content Copy",
-	"version": "1.2.1",
+	"version": "1.2.2",
 	"minAppVersion": "0.15.0",
 	"description": "Copies a document as HTML or text and saves it to the clipboard.",
 	"author": "blotspot",
