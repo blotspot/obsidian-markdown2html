@@ -3,13 +3,19 @@ import { Markdown2HtmlSettings } from "settings";
 import CopyInProgressModal from "ui/copy-modal";
 import { isEmpty, Log, removeEmptyLines } from "utils/helper";
 
-export default class CopyHtml {
-  private app: App;
-  private modal: CopyInProgressModal;
+export interface CopyCommand {
+  startCopy(content: Promise<string>): Promise<void>;
+  copyToClipboard(settings: Markdown2HtmlSettings): Promise<void>;
+  inProgress: boolean;
+}
 
-  private _inProgress: boolean = false;
-  private htmlRoot: HTMLDivElement = createDiv();
+export default class CopyHtml implements CopyCommand {
+  protected app: App;
+  protected modal: CopyInProgressModal;
+
+  protected htmlRoot: HTMLDivElement = createDiv();
   private copyComponent = new Component();
+  private _inProgress: boolean = false;
 
   constructor(app: App) {
     this.app = app;
@@ -18,15 +24,15 @@ export default class CopyHtml {
   }
 
   /** triggers the render of the markdown note or selection. */
-  async renderHtml(content: Promise<string>) {
+  async startCopy(content: Promise<string>): Promise<void> {
     try {
-      this.startCopyProcess();
+      this.init();
       const path = this.app.workspace.activeEditor?.file?.path ?? "";
       void MarkdownRenderer.render(this.app, await content, this.htmlRoot, path, this.copyComponent);
     } catch (e) {
       Log.e("Error while rendering HTML", e);
       new Notice("Error while rendering HTML", 3500);
-      this.endCopyProcess();
+      this.finish();
     }
   }
 
@@ -35,7 +41,7 @@ export default class CopyHtml {
    * Executes after a short delay to make sure all steps of the rendering are done.
    * Each time the method is called within the delay, the timer resets.
    */
-  async copyToClipboard(settings: Markdown2HtmlSettings) {
+  async copyToClipboard(settings: Markdown2HtmlSettings): Promise<void> {
     if (this.inProgress) {
       Log.d("Rendering finished, cleaning HTML...");
       const data = await this.cleanHtml(settings);
@@ -57,7 +63,7 @@ export default class CopyHtml {
           Log.e("Error while copying HTML to the clipboard", e);
           new Notice("Couldn't copy HTML to the clipboard", 3500);
         })
-        .finally(() => this.endCopyProcess());
+        .finally(() => this.finish());
     }
   }
 
@@ -65,13 +71,13 @@ export default class CopyHtml {
     return this._inProgress;
   }
 
-  private startCopyProcess() {
+  private init() {
     Log.d("Starting copy process...");
     this._inProgress = true;
     this.modal.open();
   }
 
-  private endCopyProcess() {
+  protected finish() {
     this._inProgress = false;
     this.htmlRoot.empty();
     this.modal.close();
@@ -84,12 +90,21 @@ export default class CopyHtml {
    * @param settings the settings of the plugin
    */
   private async cleanHtml(settings: Markdown2HtmlSettings) {
-    this.removeEmptyContainer();
+    this.removeFrontmatter(settings);
     this.removeAttributes(settings);
+    this.removeEmptyContainer();
     await this.convertImages();
 
     const html = removeEmptyLines(this.htmlRoot.innerHTML);
     return html;
+  }
+
+  /** Remove frontmatter header */
+  protected removeFrontmatter(settings: Markdown2HtmlSettings) {
+    if (settings.removeFrontmatter) {
+      const frontmatterNodes = this.htmlRoot.querySelectorAll(".frontmatter, .frontmatter-container");
+      frontmatterNodes.forEach(node => node.remove());
+    }
   }
 
   /** remove all child nodes that don't have any content (removes empty paragraphs left by comments) */
@@ -142,7 +157,7 @@ export default class CopyHtml {
   }
 
   /** Read a file from an uri and turn it into a base64 string */
-  private async toBase64(src: string) {
+  private async toBase64(src: string): Promise<string> {
     Log.d(`Converting internal image to base64: ${src}`);
     // Note: using fetch instead of requestUrl because requestUrl only works with http(s) URLs
     //       and we want to resolve an internal file URL.

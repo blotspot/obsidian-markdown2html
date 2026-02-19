@@ -1,4 +1,4 @@
-import CopyHtml from "commands/copy-html";
+import CopyHtml, { CopyCommand } from "commands/copy-html";
 import CopyPlainText from "commands/copy-text";
 import { addIcon, debounce, Editor, getFrontMatterInfo, MarkdownView, Menu, Plugin, removeIcon, TFile } from "obsidian";
 import { Markdown2HtmlSettings as ContentCopySettings, Markdown2HtmlSettingsTab } from "settings";
@@ -37,6 +37,7 @@ export default class Markdown2Html extends Plugin {
 
     const copyAsHtmlCommand = new CopyHtml(this.app);
     const copyAsTextCommand = new CopyPlainText(this.app);
+    let activeCommand: CopyCommand;
 
     // callback function to get the content provider (editor or file)
     const getContentProvider = (): Editor | TFile | null => {
@@ -81,6 +82,11 @@ export default class Markdown2Html extends Plugin {
       return !!extension && !["canvas", "base"].contains(extension);
     };
 
+    const startCopy = (command: CopyCommand, content: Promise<string>) => {
+      activeCommand = command;
+      void activeCommand.startCopy(content);
+    }
+
     // register copy commands
     this.addCommand({
       id: "html",
@@ -90,7 +96,7 @@ export default class Markdown2Html extends Plugin {
         const contentProvider = getContentProvider();
         if (!!contentProvider && isHtmlRenderAllowed(this.app.workspace.activeEditor?.file?.extension)) {
           if (!checking) {
-            void copyAsHtmlCommand.renderHtml(getContent(contentProvider));
+            startCopy(copyAsHtmlCommand, getContent(contentProvider));
           }
           return true;
         }
@@ -105,7 +111,7 @@ export default class Markdown2Html extends Plugin {
         const contentProvider = getContentProvider();
         if (contentProvider) {
           if (!checking) {
-            void copyAsTextCommand.copyToClipboard(getContent(contentProvider));
+            startCopy(copyAsTextCommand, getContent(contentProvider));
           }
           return true;
         }
@@ -117,7 +123,7 @@ export default class Markdown2Html extends Plugin {
     this.addRibbonIcon(NOTE2HTML_ICON, MD2HTML_ACTION_TEXT, () => {
       const contentProvider = getContentProvider();
       if (contentProvider !== null && isHtmlRenderAllowed(this.app.workspace.activeEditor?.file?.extension)) {
-        void copyAsHtmlCommand.renderHtml(getContent(contentProvider));
+        void copyAsHtmlCommand.startCopy(getContent(contentProvider));
       }
     });
 
@@ -130,7 +136,7 @@ export default class Markdown2Html extends Plugin {
           item
             .setTitle(MD2HTML_ACTION_TEXT)
             .setIcon(NOTE2HTML_ICON)
-            .onClick(async () => void copyAsHtmlCommand.renderHtml(getContent(contentProvider)));
+            .onClick(() => startCopy(copyAsHtmlCommand, getContent(contentProvider)));
         });
       }
       // add text copy item
@@ -138,7 +144,7 @@ export default class Markdown2Html extends Plugin {
         item
           .setTitle(NOTE2TXT_ACTION_TEXT)
           .setIcon(NOTE2TXT_ICON)
-          .onClick(async () => void copyAsTextCommand.copyToClipboard(getContent(contentProvider)));
+          .onClick(() => startCopy(copyAsTextCommand, getContent(contentProvider)));
       });
       menu.addSeparator();
     };
@@ -156,7 +162,7 @@ export default class Markdown2Html extends Plugin {
       })
     );
     const delayedCopyToClipboard = debounce(
-      async (settings: ContentCopySettings) => copyAsHtmlCommand.copyToClipboard(settings),
+      async (settings: ContentCopySettings) => activeCommand?.copyToClipboard(settings),
       250 /* wait delay until copy to clipboard happens */,
       true /* reset delay if method is called before timer finishes */
     );
@@ -166,7 +172,7 @@ export default class Markdown2Html extends Plugin {
       // INFO:
       // We can't unregister the post processor, and all postprocessors are called every time a render is triggered.
       // To test if the render was triggered by our copy process, we check if our copy process is in progress.
-      if (copyAsHtmlCommand.inProgress) {
+      if (activeCommand?.inProgress) {
         Log.d("HTML rendering segment finished...");
         // Get's called after every segment (can be multiple for renders with plugins like dataview).
         // Since it has a debaounce delay that will reset after every call,

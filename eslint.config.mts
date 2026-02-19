@@ -17,7 +17,6 @@ export default tseslint.config(
 						'manifest.json'
 					]
 				},
-				project: true,
 				tsconfigRootDir: import.meta.dirname,
 				extraFileExtensions: ['.json']
 			},
