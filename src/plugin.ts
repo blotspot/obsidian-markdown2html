@@ -11,6 +11,7 @@ import {
 } from "./utils/constants";
 
 export default class Markdown2Html extends Plugin {
+
   async onload() {
     // add custom icon
     addIcon(

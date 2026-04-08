@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
 
 export class Markdown2HtmlSettingsTab extends PluginSettingTab {
   private plugin: Markdown2Html;
-  private data: Markdown2HtmlSettings;
+  private data!: Markdown2HtmlSettings;
 
   public icon = NOTE2HTML_ICON;
 
