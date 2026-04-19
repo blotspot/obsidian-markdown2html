@@ -1,7 +1,7 @@
 import { debounce, ExtraButtonComponent, PluginSettingTab, Setting, TextComponent } from "obsidian";
 import Markdown2Html from "plugin";
-import { NOTE2HTML_ICON } from "./utils/constants";
-import { isEmpty, Log } from "./utils/helper";
+import { NOTE2HTML_ICON } from "utils/constants";
+import { isEmpty, Log } from "utils/helper";
 
 export interface Markdown2HtmlSettings {
   attributeList: string[];
