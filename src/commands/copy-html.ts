@@ -161,7 +161,7 @@ export default class CopyHtml implements CopyCommand {
     Log.d(`Converting internal image to base64: ${src}`);
     // Note: using fetch instead of requestUrl because requestUrl only works with http(s) URLs
     //       and we want to resolve an internal file URL.
-    return globalThis.fetch(src)
+    return activeWindow.fetch(src)
       .then(res => res.blob())
       .then(
         blob =>

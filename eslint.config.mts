@@ -1,14 +1,15 @@
-import tseslint from 'typescript-eslint';
 import obsidianmd from "eslint-plugin-obsidianmd";
+import { defineConfig, globalIgnores } from "eslint/config";
 import globals from "globals";
-import { globalIgnores } from "eslint/config";
 
-export default tseslint.config(
+
+export default defineConfig([
+	...obsidianmd.configs.recommended,
 	{
+		files: ["**/*.ts"],
 		languageOptions: {
 			globals: {
 				...globals.browser,
-				createDiv: "readonly",
 			},
 			parserOptions: {
 				projectService: {
@@ -17,12 +18,14 @@ export default tseslint.config(
 						'manifest.json'
 					]
 				},
-				tsconfigRootDir: import.meta.dirname,
-				extraFileExtensions: ['.json']
 			},
 		},
+		// You can add your own configuration to override or add rules
+		rules: {
+			// example: add a rule not in the recommended set and set its severity
+			// "obsidianmd/prefer-file-manager-trash": "error",
+		},
 	},
-	...obsidianmd.configs.recommended,
 	globalIgnores([
 		"node_modules",
 		"dist",
@@ -31,5 +34,8 @@ export default tseslint.config(
 		"version-bump.mjs",
 		"versions.json",
 		"main.js",
-	]),
-);
+		"package.json",
+		"package-lock.json",
+		"tsconfig.json",
+	])
+]);

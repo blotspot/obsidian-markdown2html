@@ -1,11 +1,11 @@
 {
-	"id": "markdown2html",
-	"name": "Content Copy",
-	"version": "1.2.3",
-	"minAppVersion": "0.15.0",
-	"description": "Copies a document as HTML or text and saves it to the clipboard.",
-	"author": "blotspot",
-	"authorUrl": "https://github.com/blotspot",
-	"fundingUrl": "https://ko-fi.com/blotspot",
-	"isDesktopOnly": false
+  "id": "content-copy",
+  "name": "Content Copy",
+  "version": "1.2.4",
+  "minAppVersion": "1.5.7",
+  "description": "Copies a document as HTML or text and saves it to the clipboard.",
+  "author": "blotspot",
+  "authorUrl": "https://github.com/blotspot",
+  "fundingUrl": "https://ko-fi.com/blotspot",
+  "isDesktopOnly": false
 }
