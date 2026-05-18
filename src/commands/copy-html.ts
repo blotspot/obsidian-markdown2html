@@ -1,4 +1,4 @@
-import { App, Component, FileSystemAdapter, MarkdownRenderer, Notice, Platform } from "obsidian";
+import { App, arrayBufferToBase64, Component, FileSystemAdapter, MarkdownRenderer, Notice, Platform, TFile } from "obsidian";
 import { Markdown2HtmlSettings } from "settings";
 import CopyInProgressModal from "ui/copy-modal";
 import { isEmpty, Log, removeEmptyLines } from "utils/helper";
@@ -168,18 +168,16 @@ export default class CopyHtml implements CopyCommand {
         const basePath = adapter.getBasePath();
         const basePathStart = src.indexOf(basePath);
         const localPath = decodeURI(src.slice(basePathStart + basePath.length, src.lastIndexOf("?")));
-        const fileData = await adapter.readBinary(localPath);
-        const blob = new Blob([fileData]);
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const fr = new FileReader();
-          fr.onload = () => resolve(fr.result as string);
-          fr.onerror = () => reject(fr.error ?? new Error("Failed to convert blob to data URL"));
-          fr.readAsDataURL(blob);
-        });
+        const file = this.app.vault.getFileByPath(localPath);
+        if (!file) {
+          throw new Error(`File not found in vault: ${localPath}`);
+        }
+        const fileData = await adapter.readBinary(file.path);
+        const dataUrl = `data:${this.getMimeType(file)};base64,${arrayBufferToBase64(fileData)}`;
 
-        if (dataUrl.length > (1024 * 128)) { // if the image is larger than 128kb, it's probably better to keep it as a file link instead of embedding it as base64
+        if (dataUrl.length > 1024 * 128) { // if the image is larger than 128KB, it's probably better to keep it as a file link instead of embedding it as base64
           Log.w(`Image too large (${dataUrl.length} bytes) to embed as base64, using file://`);
-          return `file://${basePath}${localPath}`;
+          return `file://${adapter.getFullPath(file.path)}`;
         }
 
         return dataUrl;
@@ -193,15 +191,23 @@ export default class CopyHtml implements CopyCommand {
     }
   }
 
-  private async readBinary(src: string) {
-    const adapter = this.app.vault.adapter;
-    if (adapter instanceof FileSystemAdapter) {
-      Log.d(`vault base path: ${adapter.getBasePath()}`);
-      const basePathStart = src.indexOf(adapter.getBasePath());
-      const localPath = decodeURI(src.slice(basePathStart + adapter.getBasePath().length, src.lastIndexOf("?")));
-      Log.d(`Resolved local path: ${localPath}`);
-      return await adapter.readBinary(localPath);
+  private getMimeType(file: TFile): string {
+    switch (file.extension) {
+      case "png":
+        return "image/png";
+      case "jpg":
+      case "jpeg":
+        return "image/jpeg";
+      case "gif":
+        return "image/gif";
+      case "webp":
+        return "image/webp";
+      case "svg":
+        return "image/svg+xml";
+      case "bmp":
+        return "image/bmp";
+      default:
+        return "image/unknown";
     }
-    throw new Error("Unsupported vault adapter for reading binary data");
   }
 }
