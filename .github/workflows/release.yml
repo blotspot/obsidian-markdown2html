@@ -32,6 +32,7 @@ jobs:
       - name: Attest built artifact
         uses: actions/attest@v4
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           subject-path: main.js
 
       - name: Zip output
