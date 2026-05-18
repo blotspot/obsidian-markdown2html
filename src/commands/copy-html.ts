@@ -1,4 +1,4 @@
-import { App, Component, MarkdownRenderer, Notice, Platform } from "obsidian";
+import { App, Component, FileSystemAdapter, MarkdownRenderer, Notice, Platform } from "obsidian";
 import { Markdown2HtmlSettings } from "settings";
 import CopyInProgressModal from "ui/copy-modal";
 import { isEmpty, Log, removeEmptyLines } from "utils/helper";
@@ -13,7 +13,7 @@ export default class CopyHtml implements CopyCommand {
   protected app: App;
   protected modal: CopyInProgressModal;
 
-  protected htmlRoot: HTMLDivElement = createDiv();
+  protected htmlRoot: HTMLDivElement = globalThis.createDiv();
   private copyComponent = new Component();
   private _inProgress: boolean = false;
 
@@ -158,32 +158,50 @@ export default class CopyHtml implements CopyCommand {
 
   /** Read a file from an uri and turn it into a base64 string */
   private async toBase64(src: string): Promise<string> {
-    Log.d(`Converting internal image to base64: ${src}`);
-    // Note: using fetch instead of requestUrl because requestUrl only works with http(s) URLs
-    //       and we want to resolve an internal file URL.
-    return activeWindow.fetch(src)
-      .then(res => res.blob())
-      .then(
-        blob =>
-          new Promise<FileReader>((resolve, error) => {
-            let fr = new FileReader();
-            fr.onload = () => resolve(fr);
-            fr.onerror = () => error(new Error("Failed to read blob as data URL"));
-            fr.readAsDataURL(blob);
-          })
-      )
-      .then(fr => fr.result as string)
-      .then(dataUrl => {
-        if (dataUrl.length <= 100000) {
-          return dataUrl;
-        } else {
-          Log.w(`Image too large to convert to base64, keeping original src: ${src}`);
-          return src; // fallback to original src if image is too large
+    if (src.startsWith("data:")) {
+      return src;
+    }
+
+    try {
+      const adapter = this.app.vault.adapter;
+      if (adapter instanceof FileSystemAdapter) {
+        const basePath = adapter.getBasePath();
+        const basePathStart = src.indexOf(basePath);
+        const localPath = decodeURI(src.slice(basePathStart + basePath.length, src.lastIndexOf("?")));
+        const fileData = await adapter.readBinary(localPath);
+        const blob = new Blob([fileData]);
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result as string);
+          fr.onerror = () => reject(fr.error ?? new Error("Failed to convert blob to data URL"));
+          fr.readAsDataURL(blob);
+        });
+
+        if (dataUrl.length > (1024 * 128)) { // if the image is larger than 128kb, it's probably better to keep it as a file link instead of embedding it as base64
+          Log.w(`Image too large (${dataUrl.length} bytes) to embed as base64, using file://`);
+          return `file://${basePath}${localPath}`;
         }
-      })
-      .catch(e => {
-        Log.e(`Error while converting image to base64: ${src}`, e);
-        return src; // fallback to original src if conversion fails
-      });
+
+        return dataUrl;
+
+      } else {
+        throw new Error("Unsupported vault adapter for reading binary data");
+      }
+    } catch (e) {
+      Log.e(`Error while converting image to base64: ${src}`, e);
+      return src; // fallback to original src if conversion fails
+    }
+  }
+
+  private async readBinary(src: string) {
+    const adapter = this.app.vault.adapter;
+    if (adapter instanceof FileSystemAdapter) {
+      Log.d(`vault base path: ${adapter.getBasePath()}`);
+      const basePathStart = src.indexOf(adapter.getBasePath());
+      const localPath = decodeURI(src.slice(basePathStart + adapter.getBasePath().length, src.lastIndexOf("?")));
+      Log.d(`Resolved local path: ${localPath}`);
+      return await adapter.readBinary(localPath);
+    }
+    throw new Error("Unsupported vault adapter for reading binary data");
   }
 }
