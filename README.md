@@ -1,5 +1,3 @@
-# Obsidian Markdown to HTML Plugin
-
 A simple [Obsidian](https://obsidian.md) plugin to copy notes as HTML to the clipboard.
 
 ## What it does
