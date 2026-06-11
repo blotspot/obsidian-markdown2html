@@ -8,6 +8,8 @@ export interface Markdown2HtmlSettings {
   classList: string[];
   devMode: boolean;
   removeFrontmatter: boolean;
+  removeEmptyContainer: boolean;
+  cleanup: boolean;
 }
 
 export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
@@ -15,6 +17,8 @@ export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
   classList: [],
   devMode: false,
   removeFrontmatter: true,
+  removeEmptyContainer: true,
+  cleanup: true,
 };
 
 export class Markdown2HtmlSettingsTab extends PluginSettingTab {
@@ -47,16 +51,38 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
         })
       );
 
-    new Setting(containerEl).setHeading().setName("HTML cleanup");
-    this.newListSetting(
+    const cleanupSettings: HTMLElement[] = [];
+    const toggleCleanupSettings = (value: boolean) => {
+      cleanupSettings.forEach(setting => value ? setting.show() : setting.hide());
+    }
+    new Setting(containerEl).setHeading().setName("HTML cleanup")
+      .addToggle(toggle =>
+        toggle.setValue(this.data.cleanup).onChange(async value => {
+          this.data.cleanup = value;
+          this.save();
+          toggleCleanupSettings(value);
+        })
+      );
+
+    cleanupSettings.push(new Setting(containerEl)
+      .setName("Remove empty container elements")
+      .setDesc("When enabled, empty container elements (<p>, <div>) will be removed during copy.")
+      .addToggle(toggle =>
+        toggle.setValue(this.data.removeEmptyContainer).onChange(async value => {
+          this.data.removeEmptyContainer = value;
+          this.save();
+        })
+      ).settingEl);
+
+    cleanupSettings.push(...this.newListSetting(
       containerEl,
       "Attributes to keep",
       "Add attribute name(s) you want to keep when rendering markdown to HTML.",
       "Add attribute to keep",
       this.data.attributeList
-    );
+    ));
 
-    new Setting(containerEl)
+    cleanupSettings.push(new Setting(containerEl)
       .setName("Reset attributes")
       .setDesc(
         `It is recommended to keep the default attributes. In case you accidentaly deleted some or all of them, you can reset them to the default values (${DEFAULT_SETTINGS.attributeList.join(", ")}).`
@@ -70,15 +96,18 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
             this.save();
             this.display();
           })
-      );
+      ).settingEl);
 
-    this.newListSetting(
+    cleanupSettings.push(...this.newListSetting(
       containerEl,
       "Classes to keep",
       "When you don't have the atribute 'class' in the above list, the cleanup will remove all classes from elements. In case you want to keep specific classes, you can add exceptions here.",
       "Add class to keep",
       this.data.classList
-    );
+    ));
+
+    toggleCleanupSettings(this.data.cleanup);
+
     new Setting(containerEl)
       .setHeading()
       .setName("Developer mode")
@@ -98,7 +127,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
     desc: string,
     buttonTooltip: string,
     listContent: string[]
-  ) {
+  ): HTMLElement[] {
     const setting = new Setting(containerEl).setName(name).setDesc(desc);
 
     setting.controlEl.addClass("content-copy-settings-control");
@@ -143,7 +172,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
       this.addListElement(listDiv, value, listContent);
     });
 
-    return setting;
+    return [setting.settingEl, listDiv];
   }
 
   private addListElement(

@@ -9,7 +9,7 @@ A simple [Obsidian](https://obsidian.md) plugin to copy notes as HTML to the cli
 1. Cleans up the HTML from the clutter obsidian likes to add
    - Removes all atrributes from tags (a list of attributes to keep can be configured in the settings)
    - Removes all classes (a list of classes to keep can be configured in the settings)
-   - Converts internal images into base64 strings
+   - Converts internal images up to a size of 128KB into base64 strings
    - Removes empty paragraphs (leftovers from comment blocks, for example)
 1. Saves the resulting HTML to the clipboard.
 
@@ -23,7 +23,7 @@ A simple [Obsidian](https://obsidian.md) plugin to copy notes as HTML to the cli
 
 ## Tested on
 
-- Desktop (tested on Windows and Linux)
+- Desktop (Windows & Linux)
 - iOS
 - Android
 

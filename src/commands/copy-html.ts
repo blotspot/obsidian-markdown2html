@@ -90,9 +90,11 @@ export default class CopyHtml implements CopyCommand {
    * @param settings the settings of the plugin
    */
   private async cleanHtml(settings: Markdown2HtmlSettings) {
-    this.removeFrontmatter(settings);
-    this.removeAttributes(settings);
-    this.removeEmptyContainer();
+    if (settings.cleanup) {
+      this.removeFrontmatter(settings);
+      this.removeAttributes(settings);
+      this.removeEmptyContainer(settings);
+    }
     await this.convertImages();
 
     const html = removeEmptyLines(this.htmlRoot.innerHTML);
@@ -108,12 +110,14 @@ export default class CopyHtml implements CopyCommand {
   }
 
   /** remove all child nodes that don't have any content (removes empty paragraphs left by comments) */
-  private removeEmptyContainer() {
-    this.htmlRoot.querySelectorAll("p, div").forEach(node => {
-      if (isEmpty(node.innerHTML)) {
-        node.remove();
-      }
-    });
+  private removeEmptyContainer(settings: Markdown2HtmlSettings) {
+    if (settings.removeEmptyContainer) {
+      this.htmlRoot.querySelectorAll("p, div").forEach(node => {
+        if (isEmpty(node.innerHTML)) {
+          node.remove();
+        }
+      });
+    }
   }
 
   /** Remove all irrelevant attributes of elements */
@@ -121,6 +125,9 @@ export default class CopyHtml implements CopyCommand {
     const elements = this.htmlRoot.querySelectorAll<HTMLElement>("*");
 
     elements.forEach(element => {
+      if (element.closest('svg') && element.tagName.toLowerCase() === 'svg') {
+        return;
+      }
       const attributesToRemove: string[] = [];
       const classesToKeep: string[] = Object.assign([], settings.classList).filter(cls =>
         element.classList.contains(cls)
