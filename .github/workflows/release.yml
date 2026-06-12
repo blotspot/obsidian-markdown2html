@@ -33,7 +33,7 @@ jobs:
         uses: actions/attest@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          subject-path: main.js
+          subject-path: main.js,styles.css,manifest.json
 
       - name: Zip output
         run: |

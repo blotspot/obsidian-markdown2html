@@ -13,7 +13,7 @@ export default class CopyHtml implements CopyCommand {
   protected app: App;
   protected modal: CopyInProgressModal;
 
-  protected htmlRoot: HTMLDivElement = globalThis.createDiv();
+  protected htmlRoot: HTMLDivElement = window.createDiv();
   private copyComponent = new Component();
   private _inProgress: boolean = false;
 

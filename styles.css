@@ -27,7 +27,7 @@
   justify-content: right;
 }
 
-.is-tablet .modal .setting-item:has(.content-copy-settings-control) {
+.is-tablet .modal .content-copy-list-setting {
   flex-direction: column;
   align-items: flex-start;
 }

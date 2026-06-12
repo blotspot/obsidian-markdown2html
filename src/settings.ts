@@ -128,7 +128,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
     buttonTooltip: string,
     listContent: string[]
   ): HTMLElement[] {
-    const setting = new Setting(containerEl).setName(name).setDesc(desc);
+    const setting = new Setting(containerEl).setName(name).setDesc(desc).setClass("content-copy-list-setting");
 
     setting.controlEl.addClass("content-copy-settings-control");
     const listDiv = containerEl.createDiv({
