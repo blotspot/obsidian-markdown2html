@@ -35,3 +35,7 @@
 .is-tablet .modal .content-copy-settings-control {
   width: 100%;
 }
+
+/* .vertical-tab-nav-item[data-setting-id="markdown2html"] .vertical-tab-nav-item-icon {
+  display: flex;
+} */
