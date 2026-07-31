@@ -171,17 +171,17 @@ export default class Markdown2Html extends Plugin {
     // register post processor to monitor markdown render progress
     this.registerMarkdownPostProcessor(async (el, ctx) => {
       // INFO:
-      // We can't unregister the post processor, and all postprocessors are called every time a render is triggered.
-      // To test if the render was triggered by our copy process, we check if our copy process is in progress.
+      //  We can't unregister the post processor, and all postprocessors are called every time a render is triggered.
+      //  To test if the render was triggered by our copy process, we check if our copy process is in progress.
       if (activeCommand?.inProgress) {
         Log.d("HTML rendering segment finished...");
         // Gets called after every segment (can be multiple for renders with plugins like Dataview).
-        // Since it has a debounce delay that will reset after every call,
-        // this function will execute effectively only once after all rendering actions are fully done
+        //  Since it has a debounce delay that will reset after every call,
+        //  this function will execute effectively only once after all rendering actions are fully done
         void delayedCopyToClipboard(settingsTab.settings);
       }
     }, Number.MAX_SAFE_INTEGER
-      // using a high order number to make sure this renderer goes last at every step 
+      /* using a high order number to make sure this renderer goes last at every step */
       //  (thus ensuring that any other plugin does their rendering first)
     );
   }
