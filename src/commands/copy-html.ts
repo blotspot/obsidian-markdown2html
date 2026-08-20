@@ -90,12 +90,12 @@ export default class CopyHtml implements CopyCommand {
    * @param settings the settings of the plugin
    */
   private async cleanHtml(settings: Markdown2HtmlSettings) {
+    this.removeFrontmatter(settings);
     if (settings.cleanup) {
-      this.removeFrontmatter(settings);
       this.removeAttributes(settings);
       this.removeEmptyContainer(settings);
     }
-    await this.convertImages();
+    await this.convertImages(settings.relativeImagePath);
 
     const html = removeEmptyLines(this.htmlRoot.innerHTML);
     return html;
@@ -152,19 +152,19 @@ export default class CopyHtml implements CopyCommand {
   }
 
   /** Convert internal Images to base64 data URL */
-  private async convertImages() {
+  private async convertImages(relativeImagePath: boolean) {
     const images: NodeListOf<HTMLImageElement> = this.htmlRoot.querySelectorAll('img:not([src^="http"])');
     for (let i = 0; i < images.length; i++) {
       const image = images[i];
       if (!image || typeof image.src !== "string") {
         continue;
       }
-      image.src = await this.toBase64(image.src);
+      image.src = await this.toBase64(image.src, relativeImagePath);
     }
   }
 
   /** Read a file from an uri and turn it into a base64 string */
-  private async toBase64(src: string): Promise<string> {
+  private async toBase64(src: string, relativeImagePath: boolean): Promise<string> {
     if (src.startsWith("data:")) {
       return src;
     }
@@ -174,21 +174,25 @@ export default class CopyHtml implements CopyCommand {
       if (adapter instanceof FileSystemAdapter) {
         const basePath = adapter.getBasePath();
         const basePathStart = src.indexOf(basePath);
-        const localPath = decodeURI(src.slice(basePathStart + basePath.length, src.lastIndexOf("?")));
+        const localPath = decodeURI(src.slice(basePathStart + basePath.length, src.lastIndexOf("?"))).replace(/^\/+/, "");
+        Log.d(`localPath: ${localPath}\nbasePath: ${basePath}\nsrc: ${src}`);
         const file = this.app.vault.getFileByPath(localPath);
         if (!file) {
           throw new Error(`File not found in vault: ${localPath}`);
         }
+        Log.d("Read binary data from file: " + file.path);
         const fileData = await adapter.readBinary(file.path);
-        const dataUrl = `data:${this.getMimeType(file)};base64,${arrayBufferToBase64(fileData)}`;
 
-        if (dataUrl.length > 1024 * 128) { // if the image is larger than 128KB, it's probably better to keep it as a file link instead of embedding it as base64
-          Log.w(`Image too large (${dataUrl.length} bytes) to embed as base64, using file://`);
-          return `file://${adapter.getFullPath(file.path)}`;
+        if (fileData.byteLength > 1024 * 128) { // if the image is larger than 128KB, it's probably better to keep it as a file link instead of embedding it as base64
+          Log.w(`Image too large (${fileData.byteLength} bytes) to embed as base64, using file link instead.`);
+          if (relativeImagePath) {
+            return localPath;
+          } else {
+            return `file://${adapter.getFullPath(file.path)}`;
+          }
         }
 
-        return dataUrl;
-
+        return `data:${this.getMimeType(file)};base64,${arrayBufferToBase64(fileData)}`;
       } else {
         throw new Error("Unsupported vault adapter for reading binary data");
       }

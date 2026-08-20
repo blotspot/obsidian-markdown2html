@@ -10,6 +10,7 @@ export interface Markdown2HtmlSettings {
   removeFrontmatter: boolean;
   removeEmptyContainer: boolean;
   cleanup: boolean;
+  relativeImagePath: boolean;
 }
 
 export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
@@ -19,6 +20,7 @@ export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
   removeFrontmatter: true,
   removeEmptyContainer: true,
   cleanup: true,
+  relativeImagePath: false,
 };
 
 export class Markdown2HtmlSettingsTab extends PluginSettingTab {
@@ -47,6 +49,16 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.data.removeFrontmatter).onChange(async value => {
           this.data.removeFrontmatter = value;
+          this.save();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("Relative image paths")
+      .setDesc("When enabled, local images will be referenced as relative paths from the vault root.")
+      .addToggle(toggle =>
+        toggle.setValue(this.data.relativeImagePath).onChange(async value => {
+          this.data.relativeImagePath = value;
           this.save();
         })
       );
