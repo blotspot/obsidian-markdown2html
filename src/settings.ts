@@ -90,7 +90,7 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
 
     cleanupSettings.push(new Setting(containerEl)
       .setName("Remove copy code button")
-      .setDesc("When enabled, the 'Copy Code' button on code blocks will be removed during copy.")
+      .setDesc("When enabled, the 'copy code' button on code blocks will be removed during copy.")
       .addToggle(toggle =>
         toggle.setValue(this.data.removeCopyCodeButton).onChange(async value => {
           this.data.removeCopyCodeButton = value;
