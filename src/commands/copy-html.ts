@@ -92,6 +92,7 @@ export default class CopyHtml implements CopyCommand {
   private async cleanHtml(settings: Markdown2HtmlSettings) {
     this.removeFrontmatter(settings);
     if (settings.cleanup) {
+      this.removeCopyCodeButton(settings);
       this.removeAttributes(settings);
       this.removeEmptyContainer(settings);
     }
@@ -120,12 +121,19 @@ export default class CopyHtml implements CopyCommand {
     }
   }
 
+  private removeCopyCodeButton(settings: Markdown2HtmlSettings) {
+    if (settings.removeCopyCodeButton) {
+      this.htmlRoot.querySelectorAll("button.copy-code-button").forEach(node => node.remove());
+    }
+  }
+
   /** Remove all irrelevant attributes of elements */
   private removeAttributes(settings: Markdown2HtmlSettings) {
     const elements = this.htmlRoot.querySelectorAll<HTMLElement>("*");
 
     elements.forEach(element => {
-      if (element.closest('svg') && element.tagName.toLowerCase() === 'svg') {
+      // Ignore all SVG elements and anything nested inside an <svg>.
+      if (element.closest("svg") !== null) {
         return;
       }
       const attributesToRemove: string[] = [];

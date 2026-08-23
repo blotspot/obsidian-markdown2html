@@ -11,6 +11,7 @@ export interface Markdown2HtmlSettings {
   removeEmptyContainer: boolean;
   cleanup: boolean;
   relativeImagePath: boolean;
+  removeCopyCodeButton: boolean;
 }
 
 export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
@@ -21,6 +22,7 @@ export const DEFAULT_SETTINGS: Markdown2HtmlSettings = {
   removeEmptyContainer: true,
   cleanup: true,
   relativeImagePath: false,
+  removeCopyCodeButton: false,
 };
 
 export class Markdown2HtmlSettingsTab extends PluginSettingTab {
@@ -82,6 +84,16 @@ export class Markdown2HtmlSettingsTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.data.removeEmptyContainer).onChange(async value => {
           this.data.removeEmptyContainer = value;
+          this.save();
+        })
+      ).settingEl);
+
+    cleanupSettings.push(new Setting(containerEl)
+      .setName("Remove copy code button")
+      .setDesc("When enabled, the 'Copy Code' button on code blocks will be removed during copy.")
+      .addToggle(toggle =>
+        toggle.setValue(this.data.removeCopyCodeButton).onChange(async value => {
+          this.data.removeCopyCodeButton = value;
           this.save();
         })
       ).settingEl);
