@@ -34,6 +34,7 @@ export default class Markdown2Html extends Plugin {
 
     // init settings
     const settingsTab = new Markdown2HtmlSettingsTab(this);
+    await settingsTab.loadSettings();
     this.addSettingTab(settingsTab);
 
     const copyAsHtmlCommand = new CopyHtml(this.app);

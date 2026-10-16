@@ -93,7 +93,7 @@ export default class CopyHtml implements CopyCommand {
     this.removeFrontmatter(settings);
     if (settings.cleanup) {
       this.removeCopyCodeButton(settings);
-      this.removeAttributes(settings);
+      if (settings.removeAttributes) this.removeAttributes(settings);
       this.removeEmptyContainer(settings);
     }
     await this.convertImages(settings.relativeImagePath);
@@ -137,9 +137,8 @@ export default class CopyHtml implements CopyCommand {
         return;
       }
       const attributesToRemove: string[] = [];
-      const classesToKeep: string[] = Object.assign([], settings.classList).filter(cls =>
-        element.classList.contains(cls)
-      );
+      const classesToKeep: string[] = Object.assign([], settings.removeClasses ? settings.classList : element.classList)
+        .filter(cls => element.classList.contains(cls));
 
       const attributes = element.attributes;
       for (let i = 0; i < attributes.length; i++) {
