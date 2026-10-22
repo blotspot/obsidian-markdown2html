@@ -1,3 +1,4 @@
+import beautify from "js-beautify";
 import { App, arrayBufferToBase64, Component, FileSystemAdapter, MarkdownRenderer, Notice, Platform, TFile } from "obsidian";
 import { Markdown2HtmlSettings } from "settings";
 import CopyInProgressModal from "ui/copy-modal";
@@ -36,6 +37,14 @@ export default class CopyHtml implements CopyCommand {
     }
   }
 
+  private prettyPrint(data: string, ops: { indent_size: number }): string {
+    return beautify.html(data, {
+      indent_size: ops.indent_size,
+      indent_inner_html: true,
+      end_with_newline: false,
+    });
+  }
+
   /**
    * Cleans up the rendered HTML and stores it in the system clipboard.
    * Executes after a short delay to make sure all steps of the rendering are done.
@@ -44,7 +53,7 @@ export default class CopyHtml implements CopyCommand {
   async copyToClipboard(settings: Markdown2HtmlSettings): Promise<void> {
     if (this.inProgress) {
       Log.d("Rendering finished, cleaning HTML...");
-      const data = await this.cleanHtml(settings);
+      const data = this.prettyPrint(await this.cleanHtml(settings), { indent_size: 2 });
       Log.d("Copying HTML to clipboard...");
       let clipboardWrite: Promise<void>;
       if (Platform.isDesktopApp) {
